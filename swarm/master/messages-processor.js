@@ -11,10 +11,14 @@ class MessagesProcessor {
   }
 
   process(server, sender, message) {
-    if (this.handlers[message.type]) {
-      this.handlers[message.type](server, sender, message.payload);
+    const { type, payload } = message;
+    const handler = this.handlers[type];
+
+    if (!handler) {
+      throw new Error(`No handler for message type ${type}`);
     }
 
+    handler(server, sender, payload);
   }
 
   _processConnectRequest(server, sender) {
