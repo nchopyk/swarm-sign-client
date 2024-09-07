@@ -1,10 +1,10 @@
 const BROKER_EVENTS = {
-  CONNECT_REQUEST_RESPONSE: 'connect_request_response',
+  CONNECTION_REQUEST_RESPONSE: 'connection_request_response',
 };
 
 const MESSAGES_TYPES = {
-  CONNECT_REQUEST: 'connect_request',
-  CONNECT_REQUEST_RESPONSE: 'connect_request_response',
+  CONNECTION_REQUEST: 'connection_request',
+  CONNECTION_REQUEST_RESPONSE: 'connection_request_response',
 };
 
 module.exports = {

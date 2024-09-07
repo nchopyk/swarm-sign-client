@@ -4,7 +4,7 @@ const { MESSAGES_TYPES, BROKER_EVENTS } = require('../constants');
 class MessagesProcessor {
   constructor() {
     this.handlers = {
-      [MESSAGES_TYPES.CONNECT_REQUEST_RESPONSE]: (server, sender, payload) => this._processConnectRequestResponse(server, sender, payload),
+      [MESSAGES_TYPES.CONNECTION_REQUEST_RESPONSE]: (server, sender, payload) => this._processConnectRequestResponse(server, sender, payload),
     };
   }
 
@@ -19,7 +19,7 @@ class MessagesProcessor {
       masterId: payload.masterId, masterAddress: sender.address, masterPort: sender.port,
     };
 
-    responsesBroker.publish(BROKER_EVENTS.CONNECT_REQUEST_RESPONSE, response);
+    responsesBroker.publish(BROKER_EVENTS.CONNECTION_REQUEST_RESPONSE, response);
   }
 
 }

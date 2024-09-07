@@ -6,21 +6,19 @@ const { MESSAGES_TYPES } = require('../constants');
 class MessagesProcessor {
   constructor() {
     this.handlers = {
-      [MESSAGES_TYPES.CONNECT_REQUEST]: (server, sender, message) => this._processConnectRequest(server, sender, message),
+      [MESSAGES_TYPES.CONNECTION_REQUEST]: (server, sender, payload) => this._processConnectRequest(server, sender, payload),
     };
   }
 
   process(server, sender, message) {
     if (this.handlers[message.type]) {
-      this.handlers[message.type](server, sender, message);
+      this.handlers[message.type](server, sender, message.payload);
     }
 
   }
 
   _processConnectRequest(server, sender) {
     const response = messagesBuilder.connectRequestResponse({ masterId: config.MASTER_ID });
-
-    console.log('response', response);
 
     server.send(JSON.stringify(response), sender.port, sender.address, (err) => {
       if (err) {

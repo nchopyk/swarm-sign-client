@@ -1,7 +1,7 @@
 const { MESSAGES_TYPES } = require('../constants');
 
 const buildConnectRequest = () => ({
-  type: MESSAGES_TYPES.CONNECT_REQUEST,
+  type: MESSAGES_TYPES.CONNECTION_REQUEST,
   payload: null,
 });
 

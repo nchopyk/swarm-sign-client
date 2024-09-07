@@ -78,15 +78,13 @@ class SlaveUDPGateway {
     const responseHandler = (payload) => {
       const { masterId, masterAddress, masterPort } = payload;
 
-      console.log(payload);
-
       masters[masterId] = {
         address: masterAddress,
         port: masterPort,
       };
     };
 
-    responsesBroker.subscribe(BROKER_EVENTS.CONNECT_REQUEST_RESPONSE, responseHandler);
+    responsesBroker.subscribe(BROKER_EVENTS.CONNECTION_REQUEST_RESPONSE, responseHandler);
 
     const connectRequestInterval = setInterval(() => this.sendBroadcastMessage(message), 1000);
 
