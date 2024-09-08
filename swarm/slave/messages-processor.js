@@ -1,10 +1,11 @@
 const responsesBroker = require('../responses-broker');
-const { MESSAGES_TYPES, BROKER_EVENTS } = require('../constants');
+const { MESSAGES_TYPES } = require('../constants');
 
 class MessagesProcessor {
   constructor() {
     this.handlers = {
       [MESSAGES_TYPES.CONNECTION_REQUEST_RESPONSE]: (server, sender, payload) => this._processConnectRequestResponse(server, sender, payload),
+      [MESSAGES_TYPES.ACKNOWLEDGE_CONNECT_REQUEST_RESPONSE]: (server, sender, payload) => this._processAcknowledgeConnectRequestResponse(server, sender, payload),
     };
   }
 
@@ -22,11 +23,15 @@ class MessagesProcessor {
   _processConnectRequestResponse(server, sender, payload) {
     const response = {
       masterId: payload.masterId,
-      masterAddress: sender.address,
-      masterPort: sender.port,
+      address: sender.address,
+      port: sender.port,
     };
 
-    responsesBroker.publish(BROKER_EVENTS.CONNECTION_REQUEST_RESPONSE, response);
+    responsesBroker.publish(MESSAGES_TYPES.CONNECTION_REQUEST_RESPONSE, response);
+  }
+
+  _processAcknowledgeConnectRequestResponse(server, sender, payload) {
+    responsesBroker.publish(MESSAGES_TYPES.ACKNOWLEDGE_CONNECT_REQUEST_RESPONSE, payload);
   }
 
 }

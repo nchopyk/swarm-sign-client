@@ -5,7 +5,13 @@ const buildConnectRequest = () => ({
   payload: null,
 });
 
+const buildAcknowledgeConnectRequest = ({ masterId }) => ({
+  type: MESSAGES_TYPES.ACKNOWLEDGE_CONNECT_REQUEST,
+  payload: { masterId },
+});
+
 
 module.exports = {
   connectRequest: buildConnectRequest,
+  acknowledgeConnectRequest: buildAcknowledgeConnectRequest,
 };

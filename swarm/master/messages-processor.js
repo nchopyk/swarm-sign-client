@@ -7,6 +7,7 @@ class MessagesProcessor {
   constructor() {
     this.handlers = {
       [MESSAGES_TYPES.CONNECTION_REQUEST]: (server, sender, payload) => this._processConnectRequest(server, sender, payload),
+      [MESSAGES_TYPES.ACKNOWLEDGE_CONNECT_REQUEST]: (server, sender, payload) => this._processAcknowledgeConnectRequest(server, sender, payload),
     };
   }
 
@@ -30,6 +31,23 @@ class MessagesProcessor {
       }
 
       logger.info(`sent connect request response to ${sender.address}:${sender.port}`, { tag: 'UDP SERVER | MASTER | MESSAGE PROCESSOR' });
+    });
+  }
+
+  _processAcknowledgeConnectRequest(server, sender) {
+    const address = server.address();
+
+    const response = messagesBuilder.acknowledgeConnectRequestResponse({
+      masterId: config.MASTER_ID,
+      websocketPort: config.WEBSOCKET_PORT,
+    });
+
+    server.send(JSON.stringify(response), sender.port, sender.address, (err) => {
+      if (err) {
+        logger.error(err, { tag: 'UDP SERVER | MASTER | MESSAGE PROCESSOR' });
+      }
+
+      logger.info(`sent acknowledge connect request response to ${sender.address}:${sender.port}`, { tag: 'UDP SERVER | MASTER | MESSAGE PROCESSOR' });
     });
   }
 }

@@ -10,6 +10,10 @@ class ResponsesBroker {
     this.eventEmitter.on(event, handler);
   }
 
+  subscribeOnce(event, handler) {
+    this.eventEmitter.once(event, handler);
+  }
+
   unsubscribe(event, handler) {
     this.eventEmitter.removeListener(event, handler);
   }

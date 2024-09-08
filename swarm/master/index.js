@@ -28,6 +28,10 @@ class MasterUDPGateway {
   }
 
   async start() {
+    if (!this.server) {
+      this.server = dgram.createSocket('udp4');
+    }
+
     return new Promise((resolve, reject) => {
       this.server.on('error', (err) => {
         reject(err);
@@ -53,6 +57,8 @@ class MasterUDPGateway {
           reject(err);
           return;
         }
+
+        this.server = null;
 
         logger.info('server closed', { tag: 'UDP SERVER | MASTER | ON CLOSE' });
         resolve();

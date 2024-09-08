@@ -4,7 +4,7 @@ const logger = require('../../modules/logger');
 const messagesProcessor = require('./messages-processor');
 const messagesBuilder = require('./messages-builder');
 const responsesBroker = require('../responses-broker');
-const { BROKER_EVENTS } = require('../constants');
+const { MESSAGES_TYPES } = require('../constants');
 
 
 class SlaveUDPGateway {
@@ -32,6 +32,10 @@ class SlaveUDPGateway {
   }
 
   async start() {
+    if (!this.server) {
+      this.server = dgram.createSocket('udp4');
+    }
+
     return new Promise((resolve, reject) => {
       this.server.on('error', (err) => {
         reject(err);
@@ -76,25 +80,47 @@ class SlaveUDPGateway {
     const masters = {};
 
     const responseHandler = (payload) => {
-      const { masterId, masterAddress, masterPort } = payload;
+      const { masterId, address, port } = payload;
 
       masters[masterId] = {
-        address: masterAddress,
-        port: masterPort,
+        id: masterId,
+        address,
+        port,
+        connections: Math.floor(Math.random() * 100),
       };
     };
 
-    responsesBroker.subscribe(BROKER_EVENTS.CONNECTION_REQUEST_RESPONSE, responseHandler);
+    responsesBroker.subscribe(MESSAGES_TYPES.CONNECTION_REQUEST_RESPONSE, responseHandler);
 
     const connectRequestInterval = setInterval(() => this.sendBroadcastMessage(message), 1000);
 
-
     return new Promise((resolve) => setTimeout(() => {
       clearInterval(connectRequestInterval);
-      responsesBroker.unsubscribe(BROKER_EVENTS.CONNECT_REQUEST_RESPONSE, responseHandler);
+      responsesBroker.unsubscribe(MESSAGES_TYPES.CONNECTION_REQUEST_RESPONSE, responseHandler);
 
-      resolve(masters);
+      return resolve(Object.values(masters));
     }, waitTime));
+  }
+
+  async acknowledgeMaster(masterServer) {
+    if (!this.server) {
+      throw new Error('Server is not running');
+    }
+
+    const message = messagesBuilder.acknowledgeConnectRequest({ masterId: masterServer.id });
+
+
+    return new Promise((resolve) => {
+      const responseHandler = (payload) => {
+        if (payload.masterId === masterServer.id) {
+          return resolve({ address: masterServer.address, port: payload.websocketPort });
+        }
+      };
+
+      responsesBroker.subscribeOnce(MESSAGES_TYPES.ACKNOWLEDGE_CONNECT_REQUEST_RESPONSE, responseHandler);
+
+      this.sendUnicastMessage(message, masterServer);
+    });
   }
 
   sendBroadcastMessage(message) {
@@ -127,7 +153,9 @@ class SlaveUDPGateway {
         return;
       }
 
-      logger.info(`sent unicast message: ${JSON.stringify(message)}`, { tag: 'UDP SERVER | SLAVE | UNICAST MESSAGE' });
+      logger.info(`sent unicast message to ${masterServer.address}:${masterServer.port}: ${JSON.stringify(message)}`, {
+        tag: 'UDP SERVER | SLAVE | UNICAST MESSAGE'
+      });
     });
   }
 
