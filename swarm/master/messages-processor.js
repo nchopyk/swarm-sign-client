@@ -35,8 +35,6 @@ class MessagesProcessor {
   }
 
   _processAcknowledgeConnectRequest(server, sender) {
-    const address = server.address();
-
     const response = messagesBuilder.acknowledgeConnectRequestResponse({
       masterId: config.MASTER_ID,
       websocketPort: config.WEBSOCKET_PORT,
