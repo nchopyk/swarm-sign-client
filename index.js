@@ -2,6 +2,8 @@ const logger = require('./modules/logger');
 const helpers = require('./modules/helpers');
 const slaveGateway = require('./swarm/slave');
 const masterGateway = require('./swarm/master');
+const websocketGateway = require('./websocket/server/gateway');
+const websocketClient = require('./websocket/client');
 
 // 1. Init UDP client
 // 1. Get all master server
@@ -17,10 +19,11 @@ function selectBestMaster(masters) {
 (async () => {
   await slaveGateway.start();
 
-  const masters = await slaveGateway.scanForMasters(helpers.generateRandomNumberInRange(2, 5) * 1000);
+  const masters = await slaveGateway.scanForMasters(helpers.generateRandomNumberInRange(2, 6) * 1000);
 
   if (!masters.length) {
     logger.info('No masters found, becoming master', { tag: 'INDEX' });
+    await websocketGateway.start();
     await masterGateway.start();
     await slaveGateway.stop();
     return;
@@ -31,6 +34,8 @@ function selectBestMaster(masters) {
   const websocketInfo = await slaveGateway.acknowledgeMaster(masterToConnect);
 
   console.log(websocketInfo);
+
+  await websocketClient.start(websocketInfo.address, websocketInfo.port);
 })();
 
 
