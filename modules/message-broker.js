@@ -1,7 +1,7 @@
 const EventEmitter = require('node:events');
 
 
-class ResponsesBroker {
+class MessageBroker {
   constructor() {
     this.eventEmitter = new EventEmitter();
   }
@@ -24,5 +24,5 @@ class ResponsesBroker {
 }
 
 
-module.exports = new ResponsesBroker();
+module.exports = new MessageBroker();
 

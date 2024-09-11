@@ -1,4 +1,4 @@
-const responsesBroker = require('../responses-broker');
+const responsesBroker = require('../../modules/message-broker');
 const { MESSAGES_TYPES } = require('../constants');
 
 class MessagesProcessor {

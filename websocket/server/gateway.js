@@ -1,14 +1,18 @@
 const config = require('../../config');
 const validationSchemas = require('./validation-schemas');
 const logger = require('../../modules/logger');
+const processMessageBroker = require('../../modules/message-broker');
 const { WebSocketServer } = require('ws');
 const { heartbeat, initHealthCheckInterval, sendError, validate } = require('./internal-utils');
-const { BAD_REQUEST, EVENT_HANDLER_NOT_FOUND, INTERNAL_FAILURE } = require('../errors-types');
+const { BAD_REQUEST, INTERNAL_FAILURE } = require('../errors-types');
+const { BROKER_MESSAGES_TYPES } = require('../constants');
 
 
 class WebsocketGateway {
   constructor() {
-    this.handlers = {};
+    this.incommingHandlers = {};
+    this.outgoungHandlers = {};
+    this.connections = {};
     this.server = null;
     this.healthcheckInterval = null;
   }
@@ -21,6 +25,7 @@ class WebsocketGateway {
         logger.info(`server is listening on port ${config.WS_PORT}`, { tag: 'WEBSOCKET GATEWAY' });
 
         this.healthcheckInterval = initHealthCheckInterval(this.server);
+        processMessageBroker.subscribe(BROKER_MESSAGES_TYPES.PROXY_SERVER_EVENT, (payload) => this._proxyEventToClient(payload));
 
         resolve(this.server);
       });
@@ -35,7 +40,7 @@ class WebsocketGateway {
         connection.isAlive = true;
         logger.info(`new connection from ${req.socket.remoteAddress}`, { tag: 'WEBSOCKET GATEWAY' });
 
-        connection.on('message', (msg) => this._onMessage(connection, msg));
+        connection.on('message', (buffer) => this._proxyEventToServer(connection, buffer));
         connection.on('pong', () => heartbeat(connection));
         connection.on('error', (err) => logger.error(err, { tag: 'WEBSOCKET GATEWAY' }));
         connection.on('close', () => logger.warn('Connection closed', { tag: 'WEBSOCKET GATEWAY' }));
@@ -55,6 +60,8 @@ class WebsocketGateway {
           return;
         }
 
+        clearInterval(this.healthcheckInterval);
+
         this.server = null;
         this.healthcheckInterval = null;
 
@@ -63,30 +70,52 @@ class WebsocketGateway {
     });
   }
 
-  async _onMessage(connection, msg) {
+  async _proxyEventToServer(connection, buffer) {
     try {
-      const parsedData = JSON.parse(msg.toString());
+      const parsedData = JSON.parse(buffer.toString());
 
-      const { error, value: payload } = validate({ schema: validationSchemas.incomingMessage, data: parsedData });
+      const { error, value: incomingPayload } = validate({ schema: validationSchemas.incomingMessage, data: parsedData });
 
       if (error) {
         return sendError({ connection, errorType: BAD_REQUEST, message: error.message });
       }
 
-      const { clientId, event, data } = payload;
+      const handler = this.incommingHandlers[incomingPayload.event];
 
-      const handler = this.handlers[event];
-      if (!handler) {
-        return sendError({ connection, errorType: EVENT_HANDLER_NOT_FOUND, message: `No handler for "${event}" event` });
+      if (handler) {
+        const payload = await handler(connection, incomingPayload);
+        processMessageBroker.publish(BROKER_MESSAGES_TYPES.PROXY_CLIENT_EVENT, payload);
+        return;
       }
 
-      await handler(connection, data);
+      processMessageBroker.publish(BROKER_MESSAGES_TYPES.PROXY_CLIENT_EVENT, incomingPayload);
     } catch (error) {
       sendError({ connection, errorType: INTERNAL_FAILURE, message: error.message });
-
       logger.error(error, { tag: 'WEBSOCKET GATEWAY' });
     }
   };
+
+  async _proxyEventToClient(outgoingPayload) {
+    try {
+      const connection = this.connections[outgoingPayload.clientId];
+
+      if (!connection) {
+        return logger.error(`No connection found for clientId: ${outgoingPayload.clientId}`, { tag: 'WEBSOCKET GATEWAY' });
+      }
+
+      const handler = this.outgoungHandlers[outgoingPayload.event];
+
+      if (handler) {
+        const payload = await handler(connection, outgoingPayload);
+        connection.send(JSON.stringify(payload));
+        return;
+      }
+
+      connection.send(JSON.stringify(outgoingPayload));
+    } catch (error) {
+      logger.error(error, { tag: 'WEBSOCKET GATEWAY' });
+    }
+  }
 }
 
 
