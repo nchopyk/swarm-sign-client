@@ -1,11 +1,10 @@
-const config = require('../../config');
+const config = require('../../../config');
 const validationSchemas = require('./validation-schemas');
-const logger = require('../../modules/logger');
-const processMessageBroker = require('../../modules/message-broker');
+const logger = require('../../../modules/logger');
+const processMessageBroker = require('../../../modules/message-broker');
 const { WebSocketServer } = require('ws');
 const { heartbeat, initHealthCheckInterval, sendError, validate } = require('./internal-utils');
-const { BAD_REQUEST, INTERNAL_FAILURE } = require('../errors-types');
-const { BROKER_MESSAGES_TYPES } = require('../constants');
+const { BROKER_MESSAGES_TYPES, ERROR_TYPES } = require('../constants');
 
 
 class WebsocketGateway {
@@ -52,24 +51,6 @@ class WebsocketGateway {
     });
   }
 
-  async stop() {
-    return new Promise((resolve, reject) => {
-      this.server.close((err) => {
-        if (err) {
-          reject(err);
-          return;
-        }
-
-        clearInterval(this.healthcheckInterval);
-
-        this.server = null;
-        this.healthcheckInterval = null;
-
-        resolve();
-      });
-    });
-  }
-
   async _proxyEventToServer(connection, buffer) {
     try {
       const parsedData = JSON.parse(buffer.toString());
@@ -77,7 +58,7 @@ class WebsocketGateway {
       const { error, value: incomingPayload } = validate({ schema: validationSchemas.incomingMessage, data: parsedData });
 
       if (error) {
-        return sendError({ connection, errorType: BAD_REQUEST, message: error.message });
+        return sendError({ connection, errorType: ERROR_TYPES.BAD_REQUEST, message: error.message });
       }
 
       const handler = this.incommingHandlers[incomingPayload.event];
@@ -90,7 +71,7 @@ class WebsocketGateway {
 
       processMessageBroker.publish(BROKER_MESSAGES_TYPES.PROXY_CLIENT_EVENT, incomingPayload);
     } catch (error) {
-      sendError({ connection, errorType: INTERNAL_FAILURE, message: error.message });
+      sendError({ connection, errorType: ERROR_TYPES.INTERNAL_FAILURE, message: error.message });
       logger.error(error, { tag: 'WEBSOCKET GATEWAY' });
     }
   };
@@ -115,6 +96,24 @@ class WebsocketGateway {
     } catch (error) {
       logger.error(error, { tag: 'WEBSOCKET GATEWAY' });
     }
+  }
+
+  async stop() {
+    return new Promise((resolve, reject) => {
+      this.server.close((err) => {
+        if (err) {
+          reject(err);
+          return;
+        }
+
+        clearInterval(this.healthcheckInterval);
+
+        this.server = null;
+        this.healthcheckInterval = null;
+
+        resolve();
+      });
+    });
   }
 }
 

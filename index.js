@@ -1,9 +1,9 @@
 const logger = require('./modules/logger');
 const helpers = require('./modules/helpers');
-const slaveGateway = require('./swarm/slave');
-const masterGateway = require('./swarm/master');
-const websocketGateway = require('./websocket/server/gateway');
-const websocketClient = require('./websocket/client');
+const slaveGateway = require('./gateways/swarm/slave');
+const masterGateway = require('./gateways/swarm/master');
+const websocketGateway = require('./gateways/websocket/server/gateway');
+const websocketClient = require('./gateways/websocket/client');
 
 // 1. Init UDP client
 // 1. Get all master server
