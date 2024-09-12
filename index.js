@@ -27,7 +27,7 @@ function selectBestMaster(masters) {
     await websocketGateway.start();
     await masterGateway.start();
 
-    return; // TODO: remove this line
+    return; // TODO: remove this line when server will be implemented
   } else {
     const masterToConnect = selectBestMaster(masters);
     logger.info(`Selected master ${masterToConnect.id} with ${masterToConnect.connections} connections`, { tag: 'INDEX' });
