@@ -1,5 +1,5 @@
 const config = require('../../../config');
-const validationSchemas = require('./validation-schemas');
+const validationSchemas = require('../validation-schemas');
 const logger = require('../../../modules/logger');
 const processMessageBroker = require('../../../modules/message-broker');
 const { WebSocketServer } = require('ws');
@@ -58,7 +58,7 @@ class WebsocketGateway {
       const { error, value: incomingPayload } = validate({ schema: validationSchemas.incomingMessage, data: parsedData });
 
       if (error) {
-        return sendError({ connection, errorType: ERROR_TYPES.BAD_REQUEST, message: error.message });
+        return sendError({ connection, errorType: ERROR_TYPES.INVALID_DATA_FORMAT, message: error.message });
       }
 
       const handler = this.incommingHandlers[incomingPayload.event];

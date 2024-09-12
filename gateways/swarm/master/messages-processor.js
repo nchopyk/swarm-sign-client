@@ -23,7 +23,7 @@ class MessagesProcessor {
   }
 
   _processConnectRequest(server, sender) {
-    const response = messagesBuilder.connectRequestResponse({ masterId: config.MASTER_ID });
+    const response = messagesBuilder.connectRequestResponse({ masterId: config.CLIENT_ID });
 
     server.send(JSON.stringify(response), sender.port, sender.address, (err) => {
       if (err) {

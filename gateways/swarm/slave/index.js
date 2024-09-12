@@ -92,7 +92,7 @@ class SlaveUDPGateway {
 
     responsesBroker.subscribe(MESSAGES_TYPES.CONNECTION_REQUEST_RESPONSE, responseHandler);
 
-    const connectRequestInterval = setInterval(() => this.sendBroadcastMessage(message), 1000);
+    const connectRequestInterval = setInterval(() => this.sendBroadcastMessage(message), 500);
 
     return new Promise((resolve) => setTimeout(() => {
       clearInterval(connectRequestInterval);
@@ -109,12 +109,9 @@ class SlaveUDPGateway {
 
     const message = messagesBuilder.acknowledgeConnectRequest({ masterId: masterServer.id });
 
-
     return new Promise((resolve) => {
       const responseHandler = (payload) => {
-        if (payload.masterId === masterServer.id) {
           return resolve({ address: masterServer.address, port: payload.websocketPort });
-        }
       };
 
       responsesBroker.subscribeOnce(MESSAGES_TYPES.ACKNOWLEDGE_CONNECT_REQUEST_RESPONSE, responseHandler);
