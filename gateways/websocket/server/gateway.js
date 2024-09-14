@@ -42,7 +42,7 @@ class WebsocketGateway {
         connection.on('message', (buffer) => this._proxyEventToServer(connection, buffer));
         connection.on('pong', () => heartbeat(connection));
         connection.on('error', (err) => logger.error(err, { tag: 'WEBSOCKET GATEWAY' }));
-        connection.on('close', () => logger.warn('Connection closed', { tag: 'WEBSOCKET GATEWAY' }));
+        connection.on('close', () => logger.warn('connection closed', { tag: 'WEBSOCKET GATEWAY' }));
       });
 
       this.server.on('close', () => {
@@ -81,7 +81,7 @@ class WebsocketGateway {
       const connection = this.connections[outgoingPayload.clientId];
 
       if (!connection) {
-        return logger.error(`No connection found for clientId: ${outgoingPayload.clientId}`, { tag: 'WEBSOCKET GATEWAY' });
+        return logger.error(`no connection found for clientId: ${outgoingPayload.clientId}`, { tag: 'WEBSOCKET GATEWAY' });
       }
 
       const handler = this.outgoungHandlers[outgoingPayload.event];

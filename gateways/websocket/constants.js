@@ -15,7 +15,22 @@ const ERROR_TYPES = {
   PROCESSING_FAILED: 'ERR_PROCESSING_FAILED',
 };
 
+const CLIENT_EVENTS = {
+  ERROR: 'error',
+  NEW_SCREEN: 'new_screen',
+  LOGIN: 'login',
+};
+
+const SERVER_EVENTS = {
+  AUTH_CODE: 'auth_code',
+  LOGIN_SUCCESS: 'login_success',
+  LOGIN_FAILURE: 'login_failure',
+};
+
+
 module.exports = {
   BROKER_MESSAGES_TYPES,
   ERROR_TYPES,
+  CLIENT_EVENTS,
+  SERVER_EVENTS,
 };
