@@ -10,16 +10,12 @@ const onConnection = (connection) => {
   const screenId = localStorage.getItem('screenId');
 
   if (screenId) {
-    logger.info(`Logging in with screenId: ${screenId}`, { tag: 'WEBSOCKET CLIENT | EVENT HANDLERS | ON CONNECTION' });
+    logger.info(`logging in with screenId: ${screenId}`, { tag: 'WEBSOCKET CLIENT | EVENT HANDLERS | ON CONNECTION' });
     sendMessage({ connection, clientId: config.CLIENT_ID, event: CLIENT_EVENTS.LOGIN, data: { screenId } });
   } else {
     logger.info('no screenId found, sending new screen event', { tag: 'WEBSOCKET CLIENT | EVENT HANDLERS | ON CONNECTION' });
     sendMessage({ connection, clientId: config.CLIENT_ID, event: CLIENT_EVENTS.NEW_SCREEN, data: null });
   }
-};
-
-const onConnectionClose = (connection) => {
-
 };
 
 const onInvalidIncomingMessage = (connection, error) => sendMessage({
@@ -57,7 +53,6 @@ const onError = (connection, data) => {
 
 module.exports = {
   onConnection,
-  onConnectionClose,
   onInvalidIncomingMessage,
   onHandlerMissing,
   onAuthCode,
