@@ -22,7 +22,7 @@
   },
   "homepage": "https://github.com/nchopyk/swarm-sign-client#readme",
   "devDependencies": {
-    "eslint": "^9.10.0",
+    "eslint": "^8.57.0",
     "nodemon": "^3.1.4"
   },
   "dependencies": {

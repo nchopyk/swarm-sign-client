@@ -10,7 +10,7 @@ const config = {
   CLIENT_ID: crypto.randomUUID(),
 
   WS_SERVER_ADDRESS: 'localhost',
-  WS_SERVER_PORT: 3000,
+  WS_SERVER_PORT: 2010,
   WS_PORT: 8002,
   WS_CONNECTION_HEALTHCHECK_INTERVAL: 30000,
 };
