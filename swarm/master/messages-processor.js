@@ -1,6 +1,6 @@
 const messagesBuilder = require('./messages-builder');
-const config = require('../../../config');
-const logger = require('../../../modules/logger');
+const config = require('../../config');
+const logger = require('../../modules/logger');
 const { MESSAGES_TYPES } = require('../constants');
 
 class MessagesProcessor {

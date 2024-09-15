@@ -1,4 +1,4 @@
-const { WS_CONNECTION_HEALTHCHECK_INTERVAL } = require('../../../config');
+const { WS_CONNECTION_HEALTHCHECK_INTERVAL } = require('../../config');
 
 
 const heartbeat = (ws) => ws.isAlive = true;

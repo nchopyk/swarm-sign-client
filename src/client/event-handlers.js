@@ -1,8 +1,8 @@
 const config = require('../../config');
 const localStorage = require('../../modules/local-storage');
 const logger = require('../../modules/logger');
-const { CLIENT_EVENTS, ERROR_TYPES } = require('../../gateways/websocket/constants');
-const { sendMessage } = require('../../gateways/websocket/client/internal-utils');
+const { CLIENT_EVENTS, ERROR_TYPES } = require('../../websocket/constants');
+const { sendMessage } = require('../../websocket/client/internal-utils');
 const { buildErrorMessages } = require('./message-builders');
 
 

@@ -1,9 +1,9 @@
 const dgram = require('dgram');
-const config = require('../../../config');
-const logger = require('../../../modules/logger');
+const config = require('../../config');
+const logger = require('../../modules/logger');
 const messagesProcessor = require('./messages-processor');
 const messagesBuilder = require('./messages-builder');
-const responsesBroker = require('../../../modules/message-broker');
+const responsesBroker = require('../../modules/message-broker');
 const { MESSAGES_TYPES } = require('../constants');
 
 
@@ -110,9 +110,7 @@ class SlaveUDPGateway {
     const message = messagesBuilder.acknowledgeConnectRequest({ masterId: masterServer.id });
 
     return new Promise((resolve) => {
-      const responseHandler = (payload) => {
-          return resolve({ address: masterServer.address, port: payload.websocketPort });
-      };
+      const responseHandler = (payload) => resolve({ address: masterServer.address, port: payload.websocketPort });
 
       responsesBroker.subscribeOnce(MESSAGES_TYPES.ACKNOWLEDGE_CONNECT_REQUEST_RESPONSE, responseHandler);
 
