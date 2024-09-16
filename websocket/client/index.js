@@ -9,6 +9,7 @@ const {
   onInvalidIncomingMessage,
   onHandlerMissing,
   onAuthCode,
+  onAuthSuccess,
   onLoginSuccess,
   onLoginFailure,
   onConnection,
@@ -21,6 +22,7 @@ class Client {
     this.ws = null;
     this.handlers = {
       [SERVER_EVENTS.AUTH_CODE]: onAuthCode,
+      [SERVER_EVENTS.AUTH_SUCCESS]: onAuthSuccess,
       [SERVER_EVENTS.LOGIN_SUCCESS]: onLoginSuccess,
       [SERVER_EVENTS.LOGIN_FAILURE]: onLoginFailure,
       [SERVER_EVENTS.ERROR]: onError

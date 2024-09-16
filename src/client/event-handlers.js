@@ -30,7 +30,21 @@ const onHandlerMissing = (connection, event) => {
 };
 
 const onAuthCode = (connection, data) => {
+  const { code } = data;
 
+  logger.info(`received authCode: ${code}`, { tag: 'WEBSOCKET CLIENT | EVENT HANDLERS | ON AUTH CODE' });
+
+};
+
+const onAuthSuccess = async (connection, data) => {
+  const { screenId } = data;
+
+  logger.info(`received screenId: ${screenId}`, { tag: 'WEBSOCKET CLIENT | EVENT HANDLERS | ON AUTH SUCCESS' });
+
+  await localStorage.setItem('screenId', screenId);
+
+  logger.info(`logging in with screenId: ${screenId}`, { tag: 'WEBSOCKET CLIENT | EVENT HANDLERS | ON AUTH SUCCESS' });
+  sendMessage({ connection, clientId: config.CLIENT_ID, event: CLIENT_EVENTS.LOGIN, data: { screenId } });
 };
 
 const onLoginSuccess = (connection, data) => {
@@ -46,7 +60,6 @@ const onPlaylist = (connection, data) => {
 };
 
 const onError = (connection, data) => {
-  console.log(data);
   logger.warn(`received error: ${data.message}`, { tag: 'WEBSOCKET CLIENT | EVENT HANDLERS | ON ERROR' });
 };
 
@@ -56,6 +69,7 @@ module.exports = {
   onInvalidIncomingMessage,
   onHandlerMissing,
   onAuthCode,
+  onAuthSuccess,
   onLoginSuccess,
   onLoginFailure,
   onPlaylist,

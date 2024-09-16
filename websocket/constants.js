@@ -24,6 +24,7 @@ const CLIENT_EVENTS = {
 const SERVER_EVENTS = {
   ERROR: 'error',
   AUTH_CODE: 'auth_code',
+  AUTH_SUCCESS: 'auth_success',
   LOGIN_SUCCESS: 'login_success',
   LOGIN_FAILURE: 'login_failure',
 };

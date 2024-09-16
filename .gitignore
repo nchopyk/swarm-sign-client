@@ -131,3 +131,6 @@ dist
 
 # IDE files
 .idea/
+
+# Local storage file
+local-storage.json
