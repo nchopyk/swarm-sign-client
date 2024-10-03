@@ -1,9 +1,9 @@
 const dgram = require('dgram');
-const config = require('../../config');
-const logger = require('../../modules/logger');
+const config = require('../../../config');
+const logger = require('../../../modules/logger');
 const messagesProcessor = require('./messages-processor');
 const messagesBuilder = require('./messages-builder');
-const responsesBroker = require('../../modules/message-broker');
+const responsesBroker = require('../../../modules/message-broker');
 const { MESSAGES_TYPES } = require('../constants');
 
 

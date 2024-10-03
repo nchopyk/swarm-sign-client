@@ -1,7 +1,7 @@
-const config = require('../../config');
+const config = require('../../../config');
 const validationSchemas = require('../validation-schemas');
-const logger = require('../../modules/logger');
-const processMessageBroker = require('../../modules/message-broker');
+const logger = require('../../../modules/logger');
+const processMessageBroker = require('../../../modules/message-broker');
 const { WebSocketServer } = require('ws');
 const { heartbeat, initHealthCheckInterval, sendError, validate } = require('./internal-utils');
 const { BROKER_MESSAGES_TYPES, ERROR_TYPES } = require('../constants');

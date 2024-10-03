@@ -1,10 +1,10 @@
 const logger = require('./modules/logger');
 const config = require('./config');
 const helpers = require('./modules/helpers');
-const slaveGateway = require('./swarm/slave');
-const masterGateway = require('./swarm/master');
-const websocketGateway = require('./websocket/server/gateway');
-const websocketClient = require('./websocket/client');
+const slaveGateway = require('./gateways/swarm/slave');
+const masterGateway = require('./gateways/swarm/master');
+const websocketGateway = require('./gateways/websocket/server/gateway');
+const websocketClient = require('./gateways/websocket/client');
 const localStorage = require('./modules/local-storage');
 
 function selectBestMaster(masters) {

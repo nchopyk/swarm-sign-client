@@ -1,8 +1,8 @@
 const WebSocket = require('ws');
-const logger = require('../../modules/logger');
-const config = require('../../config');
+const logger = require('../../../modules/logger');
+const config = require('../../../config');
 const validationSchemas = require('../validation-schemas');
-const processMessageBroker = require('../../modules/message-broker');
+const processMessageBroker = require('../../../modules/message-broker');
 const { validate } = require('./internal-utils');
 const { BROKER_MESSAGES_TYPES, SERVER_EVENTS } = require('../constants');
 const {
@@ -14,7 +14,7 @@ const {
   onLoginFailure,
   onConnection,
   onError
-} = require('../../src/client/event-handlers');
+} = require('../../../client/event-handlers');
 
 
 class Client {

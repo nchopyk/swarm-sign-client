@@ -1,6 +1,6 @@
 const dgram = require('dgram');
-const config = require('../../config');
-const logger = require('../../modules/logger');
+const config = require('../../../config');
+const logger = require('../../../modules/logger');
 const messagesProcessor = require('./messages-processor');
 
 
