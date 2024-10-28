@@ -3,6 +3,14 @@ window.IPC.onShowAuthScreen((code) => {
   switchScreen('auth');
 });
 
+window.IPC.onLoginSuccess(() => {
+  showNotification('Login successful');
+});
+
+window.IPC.onLoginFail(() => {
+  showNotification('Login failed', 'error');
+});
+
 
 window.IPC.onPlayerStart(({ schedule }) => {
   switchScreen('player');
@@ -92,4 +100,22 @@ function switchScreen(target) {
   } else {
     console.error('Invalid target:', target);
   }
+}
+
+
+function showNotification(message, type = 'info', duration = 3000) {
+  const container = document.getElementById('notification-container');
+
+  // Create a new notification element
+  const notification = document.createElement('div');
+  notification.className = `notification ${type}`;
+  notification.textContent = message;
+
+  // Append notification to the container
+  container.appendChild(notification);
+
+  // Remove the notification after the specified duration
+  setTimeout(() => {
+    notification.remove();
+  }, duration);
 }

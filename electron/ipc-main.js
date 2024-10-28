@@ -1,3 +1,6 @@
+const ipcCommands = require('./ipc-commands');
+
+
 class IPCMainListener {
   constructor() {
     this.mainWindow = null;
@@ -7,22 +10,18 @@ class IPCMainListener {
     this.mainWindow = mainWindow;
   }
 
-  sendCommandToShowAuthScreen(code) {
+  sendCommand(command, data) {
     if (!this.mainWindow) {
       console.error('[ELECTRON | IPC MAIN LISTENER] main window is not set');
       return;
     }
 
-    this.mainWindow.webContents.send('show-auth-screen', code);
-  }
-
-  sendCommandToStartPlayer(schedule) {
-    if (!this.mainWindow) {
-      console.error('[ELECTRON | IPC MAIN LISTENER] main window is not set');
+    if (!Object.values(ipcCommands).includes(command)) {
+      console.error(`[ELECTRON | IPC MAIN LISTENER] command ${command} is not valid`);
       return;
     }
 
-    this.mainWindow.webContents.send('start-player', schedule);
+    this.mainWindow.webContents.send(command, data);
   }
 }
 
