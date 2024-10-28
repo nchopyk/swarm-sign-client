@@ -13,7 +13,8 @@ const {
   onLoginSuccess,
   onLoginFailure,
   onConnection,
-  onError
+  onError,
+  onSchedule
 } = require('../../../client/event-handlers');
 
 
@@ -25,6 +26,7 @@ class Client {
       [SERVER_EVENTS.AUTH_SUCCESS]: onAuthSuccess,
       [SERVER_EVENTS.LOGIN_SUCCESS]: onLoginSuccess,
       [SERVER_EVENTS.LOGIN_FAILURE]: onLoginFailure,
+      [SERVER_EVENTS.SCHEDULE]: onSchedule,
       [SERVER_EVENTS.ERROR]: onError
     };
     this.port = null;

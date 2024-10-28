@@ -21,13 +21,13 @@ class LocalStorage {
   }
 
   async setItem(key, value) {
-    await this.writeItemsToLocalstorage();
     this.items[key] = value;
+    await this.writeItemsToLocalstorage();
   }
 
   async removeItem(key) {
-    await this.writeItemsToLocalstorage();
     delete this.items[key];
+    await this.writeItemsToLocalstorage();
   }
 
   async clear() {

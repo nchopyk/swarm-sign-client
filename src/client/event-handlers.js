@@ -1,6 +1,7 @@
 const config = require('../config');
 const localStorage = require('../modules/local-storage');
 const logger = require('../modules/logger');
+const ipcMain = require('../../electron/ipc-main');
 const { CLIENT_EVENTS, ERROR_TYPES } = require('../gateways/websocket/constants');
 const { sendMessage } = require('../gateways/websocket/client/internal-utils');
 const { buildErrorMessages } = require('./message-builders');
@@ -8,6 +9,11 @@ const { buildErrorMessages } = require('./message-builders');
 
 const onConnection = (connection) => {
   const screenId = localStorage.getItem('screenId');
+  const clientId = localStorage.getItem('clientId');
+
+  if (clientId) {
+    config.CLIENT_ID = clientId;
+  }
 
   if (screenId) {
     logger.info(`logging in with screenId: ${screenId}`, { tag: 'WEBSOCKET CLIENT | EVENT HANDLERS | ON CONNECTION' });
@@ -34,6 +40,7 @@ const onAuthCode = (connection, data) => {
 
   logger.info(`received authCode: ${code}`, { tag: 'WEBSOCKET CLIENT | EVENT HANDLERS | ON AUTH CODE' });
 
+  ipcMain.sendCommandToShowAuthScreen(code);
 };
 
 const onAuthSuccess = async (connection, data) => {
@@ -41,6 +48,9 @@ const onAuthSuccess = async (connection, data) => {
 
   logger.info(`received screenId: ${screenId}`, { tag: 'WEBSOCKET CLIENT | EVENT HANDLERS | ON AUTH SUCCESS' });
 
+  console.log('setting screenId', screenId);
+  console.log('setting clientId', config.CLIENT_ID);
+  await localStorage.setItem('clientId', config.CLIENT_ID);
   await localStorage.setItem('screenId', screenId);
 
   logger.info(`logging in with screenId: ${screenId}`, { tag: 'WEBSOCKET CLIENT | EVENT HANDLERS | ON AUTH SUCCESS' });
@@ -55,8 +65,8 @@ const onLoginFailure = (connection, data) => {
 
 };
 
-const onPlaylist = (connection, data) => {
-
+const onSchedule = (connection, data) => {
+  ipcMain.sendCommandToStartPlayer(data);
 };
 
 const onError = (connection, data) => {
@@ -72,6 +82,6 @@ module.exports = {
   onAuthSuccess,
   onLoginSuccess,
   onLoginFailure,
-  onPlaylist,
+  onSchedule,
   onError,
 };
