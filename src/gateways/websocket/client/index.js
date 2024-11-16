@@ -86,18 +86,12 @@ class Client {
   }
 
   async stop() {
-    return new Promise((resolve, reject) => {
-      this.ws.close((err) => {
-        if (err) {
-          reject(err);
-          return;
-        }
+    if (!this.ws) {
+      return;
+    }
 
-        this.ws = null;
-        resolve();
-      });
-
-    });
+    this.ws.removeAllListeners();
+    this.ws.close();
   }
 
   async retryConnection() {

@@ -41,7 +41,7 @@ const onAuthCode = (connection, data) => {
 
   logger.info(`received authCode: ${code}`, { tag: 'WEBSOCKET CLIENT | EVENT HANDLERS | ON AUTH CODE' });
 
-  ipcMain.sendCommand(ipcCommands.SHOW_AUTH_SCREEN, code);
+  ipcMain.sendCommand(ipcCommands.SHOW_AUTH_SCREEN, { code });
 };
 
 const onAuthSuccess = async (connection, data) => {
@@ -49,8 +49,6 @@ const onAuthSuccess = async (connection, data) => {
 
   logger.info(`received screenId: ${screenId}`, { tag: 'WEBSOCKET CLIENT | EVENT HANDLERS | ON AUTH SUCCESS' });
 
-  console.log('setting screenId', screenId);
-  console.log('setting clientId', config.CLIENT_ID);
   await localStorage.setItem('clientId', config.CLIENT_ID);
   await localStorage.setItem('screenId', screenId);
 
@@ -78,6 +76,7 @@ const onLoginFailure = async (connection, data) => {
 };
 
 const onSchedule = (connection, data) => {
+  logger.info('received schedule', { tag: 'WEBSOCKET CLIENT | EVENT HANDLERS | ON SCHEDULE' });
   ipcMain.sendCommand(ipcCommands.START_PLAYER, data);
 };
 

@@ -11,7 +11,7 @@ function selectBestMaster(masters) {
   return masters.sort((a, b) => a.connections - b.connections)[0];
 }
 
-(async () => {
+const start = async () => {
   await localStorage.init();
 
   // logger.info('Scanning for masters', { tag: 'INDEX' });
@@ -40,7 +40,19 @@ function selectBestMaster(masters) {
   // await slaveGateway.stop();
 
   await websocketClient.start(serverConnectionParams.address, serverConnectionParams.port);
-})();
+};
+
+const stop = async () => {
+  // await masterGateway.stop();
+  await websocketGateway.stop();
+  await websocketClient.stop();
+};
+
+
+module.exports = {
+  start,
+  stop,
+};
 
 
 

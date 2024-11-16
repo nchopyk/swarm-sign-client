@@ -14,14 +14,15 @@ function createWindow() {
     }
   });
 
-  mainWindow.loadFile('electron/index.html');
+  mainWindow.loadURL('http://localhost:5173');
 
   ipcMain.setMainWindow(mainWindow);
 
   mainWindow.webContents.openDevTools();
   // start connection client after main window is created
 
-  mainWindow.on('ready-to-show', async () => {
+  mainWindow.webContents.on('did-finish-load', async () => {
+    await connectionClient.stop();
     await connectionClient.start();
   });
 
@@ -37,8 +38,10 @@ app.whenReady().then(async () => {
   });
 });
 
-app.on('window-all-closed', () => {
+app.on('window-all-closed', async () => {
   if (process.platform !== 'darwin') {
     app.quit();
   }
+
+  await connectionClient.stop();
 });

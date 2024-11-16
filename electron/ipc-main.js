@@ -11,6 +11,8 @@ class IPCMainListener {
   }
 
   sendCommand(command, data) {
+    console.log(`[ELECTRON | IPC MAIN LISTENER] sending command ${command}`);
+
     if (!this.mainWindow) {
       console.error('[ELECTRON | IPC MAIN LISTENER] main window is not set');
       return;
