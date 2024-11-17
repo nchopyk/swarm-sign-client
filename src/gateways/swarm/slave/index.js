@@ -4,6 +4,8 @@ const logger = require('../../../modules/logger');
 const messagesProcessor = require('./messages-processor');
 const messagesBuilder = require('./messages-builder');
 const responsesBroker = require('../../../modules/message-broker');
+const ipcCommands = require('../../../../electron/ipc-commands');
+const ipcMain = require('../../../../electron/ipc-main');
 const { MESSAGES_TYPES } = require('../constants');
 
 
@@ -88,6 +90,8 @@ class SlaveUDPGateway {
         port,
         connections: Math.floor(Math.random() * 100),
       };
+
+      ipcMain.sendCommand(ipcCommands.UPDATE_AVAILABLE_MASTERS, masters);
     };
 
     responsesBroker.subscribe(MESSAGES_TYPES.CONNECTION_REQUEST_RESPONSE, responseHandler);
@@ -108,6 +112,8 @@ class SlaveUDPGateway {
     }
 
     const message = messagesBuilder.acknowledgeConnectRequest({ masterId: masterServer.id });
+
+    ipcMain.sendCommand(ipcCommands.UPDATE_SELECTED_MASTER, masterServer);
 
     return new Promise((resolve) => {
       const responseHandler = (payload) => resolve({ address: masterServer.address, port: payload.websocketPort });

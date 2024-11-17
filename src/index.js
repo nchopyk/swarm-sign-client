@@ -6,6 +6,8 @@ const masterGateway = require('./gateways/swarm/master');
 const websocketGateway = require('./gateways/websocket/server/gateway');
 const websocketClient = require('./gateways/websocket/client');
 const localStorage = require('./modules/local-storage');
+const ipcCommands = require('../electron/ipc-commands');
+const ipcMain = require('../electron/ipc-main');
 
 function selectBestMaster(masters) {
   return masters.sort((a, b) => a.connections - b.connections)[0];
@@ -14,8 +16,13 @@ function selectBestMaster(masters) {
 const start = async () => {
   await localStorage.init();
 
+  let connectionMode = 'proxy';
+
+  ipcMain.sendCommand(ipcCommands.UPDATE_CONNECTION_MODE, { connectionMode });
+
   logger.info('Scanning for masters', { tag: 'INDEX' });
   await slaveGateway.start();
+
 
   const masters = await slaveGateway.scanForMasters(helpers.generateRandomNumberInRange(600, 5000));
 
@@ -29,6 +36,9 @@ const start = async () => {
     logger.info('No masters found, becoming master', { tag: 'INDEX' });
     await websocketGateway.start();
     await masterGateway.start();
+
+    connectionMode = 'direct';
+    ipcMain.sendCommand(ipcCommands.UPDATE_CONNECTION_MODE, { connectionMode });
   } else {
     const masterToConnect = selectBestMaster(masters);
     logger.info(`Selected master ${masterToConnect.id} with ${masterToConnect.connections} connections`, { tag: 'INDEX' });
