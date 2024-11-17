@@ -1,4 +1,5 @@
 const commands = {
+  CONNECTION_ESTABLISHED: 'connection-established',
   SHOW_AUTH_SCREEN: 'show-auth-screen',
   START_PLAYER: 'start-player',
   LOGIN_SUCCESS: 'login-success',

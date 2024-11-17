@@ -14,36 +14,34 @@ function selectBestMaster(masters) {
 const start = async () => {
   await localStorage.init();
 
-  // logger.info('Scanning for masters', { tag: 'INDEX' });
-  // await slaveGateway.start();
-  //
-  // const masters = await slaveGateway.scanForMasters(helpers.generateRandomNumberInRange(600, 5000));
+  logger.info('Scanning for masters', { tag: 'INDEX' });
+  await slaveGateway.start();
 
-  const serverConnectionParams = {
+  const masters = await slaveGateway.scanForMasters(helpers.generateRandomNumberInRange(600, 5000));
+
+  let serverConnectionParams = {
+    type: 'server',
     address: config.WS_SERVER_ADDRESS,
     port: config.WS_SERVER_PORT
   };
 
-  // if (!masters.length) {
-  //   logger.info('No masters found, becoming master', { tag: 'INDEX' });
-  //   await websocketGateway.start();
-  //   await masterGateway.start();
-  //
-  //   return; // TODO: remove this line when server will be implemented
-  // } else {
-  //   const masterToConnect = selectBestMaster(masters);
-  //   logger.info(`Selected master ${masterToConnect.id} with ${masterToConnect.connections} connections`, { tag: 'INDEX' });
-  //   const { address, port } = await slaveGateway.acknowledgeMaster(masterToConnect);
-  //
-  //   serverConnectionParams = { address, port };
-  // }
-  // await slaveGateway.stop();
+  if (!masters.length) {
+    logger.info('No masters found, becoming master', { tag: 'INDEX' });
+    await websocketGateway.start();
+    await masterGateway.start();
+  } else {
+    const masterToConnect = selectBestMaster(masters);
+    logger.info(`Selected master ${masterToConnect.id} with ${masterToConnect.connections} connections`, { tag: 'INDEX' });
+    const { address, port } = await slaveGateway.acknowledgeMaster(masterToConnect);
 
-  await websocketClient.start(serverConnectionParams.address, serverConnectionParams.port);
+    serverConnectionParams = { address, port, type: 'master' };
+  }
+  await slaveGateway.stop();
+  await websocketClient.start(serverConnectionParams);
 };
 
 const stop = async () => {
-  // await masterGateway.stop();
+  await masterGateway.stop();
   await websocketGateway.stop();
   await websocketClient.stop();
 };

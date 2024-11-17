@@ -33,7 +33,7 @@ class Client {
     this.address = null;
   }
 
-  async start(address, port) {
+  async start({ address, port, type }) {
     this.address = address;
     this.port = port;
 
@@ -49,7 +49,7 @@ class Client {
         logger.info('connected to server', { tag: 'WEBSOCKET CLIENT' });
         resolve();
 
-        onConnection(this.ws);
+        onConnection(this.ws, address, port, type);
       });
 
       this.ws.on('message', async (buffer) => {
