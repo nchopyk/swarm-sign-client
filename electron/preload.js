@@ -7,4 +7,7 @@ contextBridge.exposeInMainWorld('IPC', {
   onLoginFail: (callback) => ipcRenderer.on(ipcCommands.LOGIN_FAILURE, (_event, data) => callback(data)),
   onShowAuthScreen: (callback) => ipcRenderer.on(ipcCommands.SHOW_AUTH_SCREEN, (_event, data) => callback(data)),
   onPlayerStart: (callback) => ipcRenderer.on(ipcCommands.START_PLAYER, (_event, data) => callback(data)),
+  onConnectionModeUpdate: (callback) => ipcRenderer.on(ipcCommands.UPDATE_CONNECTION_MODE, (_event, data) => callback(data)),
+  onAvailableMastersUpdate: (callback) => ipcRenderer.on(ipcCommands.UPDATE_AVAILABLE_MASTERS, (_event, data) => callback(data)),
+  onSelectedMasterUpdate: (callback) => ipcRenderer.on(ipcCommands.UPDATE_SELECTED_MASTER, (_event, data) => callback(data)),
 });
