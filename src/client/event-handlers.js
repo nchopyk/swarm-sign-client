@@ -8,8 +8,10 @@ const { sendMessage } = require('../gateways/websocket/client/internal-utils');
 const { buildErrorMessages } = require('./message-builders');
 
 
-const onConnection = (connection, address, port, type) => {
+const onConnection = async (connection, address, port, type) => {
   ipcMain.sendCommand(ipcCommands.CONNECTION_ESTABLISHED, { type, address, port });
+
+  await new Promise((resolve) => setTimeout(resolve, 2500));
 
   const screenId = localStorage.getItem('screenId');
   const clientId = localStorage.getItem('clientId');

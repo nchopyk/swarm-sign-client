@@ -18,7 +18,7 @@ const start = async () => {
 
   let connectionMode = 'proxy';
 
-  ipcMain.sendCommand(ipcCommands.UPDATE_CONNECTION_MODE, { connectionMode });
+  ipcMain.sendCommand(ipcCommands.UPDATE_CONNECTION_MODE, { mode: connectionMode });
 
   logger.info('Scanning for masters', { tag: 'INDEX' });
   await slaveGateway.start();
@@ -34,11 +34,13 @@ const start = async () => {
 
   if (!masters.length) {
     logger.info('No masters found, becoming master', { tag: 'INDEX' });
+    await new Promise((resolve) => setTimeout(resolve, 2500));
+
     await websocketGateway.start();
     await masterGateway.start();
 
     connectionMode = 'direct';
-    ipcMain.sendCommand(ipcCommands.UPDATE_CONNECTION_MODE, { connectionMode });
+    ipcMain.sendCommand(ipcCommands.UPDATE_CONNECTION_MODE, { mode: connectionMode });
   } else {
     const masterToConnect = selectBestMaster(masters);
     logger.info(`Selected master ${masterToConnect.id} with ${masterToConnect.connections} connections`, { tag: 'INDEX' });
@@ -47,6 +49,7 @@ const start = async () => {
     serverConnectionParams = { address, port, type: 'master' };
   }
   await slaveGateway.stop();
+
   await websocketClient.start(serverConnectionParams);
 };
 
