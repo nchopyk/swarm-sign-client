@@ -2,6 +2,8 @@ const dgram = require('dgram');
 const config = require('../../../config');
 const logger = require('../../../modules/logger');
 const messagesProcessor = require('./messages-processor');
+const ipcCommands = require('../../../../electron/ipc-commands');
+const ipcMain = require('../../../../electron/ipc-main');
 
 
 class MasterUDPGateway {
@@ -41,6 +43,8 @@ class MasterUDPGateway {
         this.server.setBroadcast(true);
 
         const address = this.server.address();
+
+        ipcMain.sendCommand(ipcCommands.UPDATE_MASTER_GATEWAY, { address: config.LOCAL_ADDRESS, port: address.port });
 
         logger.info(`server listening ${address.address}:${address.port}`, { tag: 'UDP SERVER | MASTER | ON LISTENING' });
         resolve(this.server);

@@ -3,6 +3,8 @@ const logger = require('../../../modules/logger');
 const config = require('../../../config');
 const validationSchemas = require('../validation-schemas');
 const processMessageBroker = require('../../../modules/message-broker');
+const ipcCommands = require('../../../../electron/ipc-commands');
+const ipcMain = require('../../../../electron/ipc-main');
 const { validate } = require('./internal-utils');
 const { BROKER_MESSAGES_TYPES, SERVER_EVENTS } = require('../constants');
 const {
@@ -80,6 +82,9 @@ class Client {
 
       this.ws.on('close', () => {
         logger.warn('connection closed', { tag: 'WEBSOCKET CLIENT' });
+
+        ipcMain.sendCommand(ipcCommands.CONNECTION_CLOSED, { type });
+
         this.retryConnection();
       });
     });
