@@ -28,6 +28,7 @@ const SERVER_EVENTS = {
   LOGIN_SUCCESS: 'login_success',
   LOGIN_FAILURE: 'login_failed',
   SCHEDULE: 'schedule',
+  RESET: 'reset',
 };
 
 

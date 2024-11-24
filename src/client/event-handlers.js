@@ -88,6 +88,13 @@ const onError = (connection, data) => {
   logger.warn(`received error: ${data.message}`, { tag: 'WEBSOCKET CLIENT | EVENT HANDLERS | ON ERROR' });
 };
 
+const onReset = async () => {
+  await localStorage.removeItem('screenId');
+  await localStorage.removeItem('clientId');
+
+  logger.info('screenId and clientId removed', { tag: 'WEBSOCKET CLIENT | EVENT HANDLERS | ON RESET' });
+  ipcMain.sendCommand(ipcCommands.RESET_DATA);
+};
 
 module.exports = {
   onConnection,
@@ -99,4 +106,5 @@ module.exports = {
   onLoginFailure,
   onSchedule,
   onError,
+  onReset,
 };
