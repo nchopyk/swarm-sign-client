@@ -40,6 +40,7 @@ class Client {
   async start({ address, port, type }) {
     this.address = address;
     this.port = port;
+    this.type = type;
 
     return new Promise((resolve, reject) => {
       this.ws = new WebSocket(`ws://${address}:${port}`);
@@ -107,7 +108,7 @@ class Client {
     }
 
     setTimeout(() => {
-      this.start(this.address, this.port).catch((error) => {
+      this.start({ address: this.address, port: this.port, type: this.type }).catch((error) => {
         logger.warn(`failed to reconnect: ${error.message}`, { tag: 'WEBSOCKET CLIENT' });
       });
     }, 1000);
