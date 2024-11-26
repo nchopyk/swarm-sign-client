@@ -64,6 +64,8 @@ class MasterUDPGateway {
 
         this.server = null;
 
+        ipcMain.sendCommand(ipcCommands.UPDATE_MASTER_GATEWAY, { address: null, port: null });
+
         logger.info('server closed', { tag: 'UDP SERVER | MASTER | ON CLOSE' });
         resolve();
       });
