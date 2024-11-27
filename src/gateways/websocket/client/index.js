@@ -55,6 +55,11 @@ class Client {
         resolve();
 
         onConnection(this.ws, address, port, type);
+
+        processMessageBroker.subscribe(BROKER_MESSAGES_TYPES.PROXY_CLIENT_EVENT, (payload) => {
+          logger.info(`sending message: ${JSON.stringify(payload)}`, { tag: 'WEBSOCKET CLIENT | PROXY' });
+          this.ws.send(JSON.stringify(payload));
+        });
       });
 
       this.ws.on('message', async (buffer) => {
@@ -77,6 +82,7 @@ class Client {
             return processMessageBroker.publish(BROKER_MESSAGES_TYPES.PROXY_SERVER_EVENT, incomingPayload);
           }
 
+          processMessageBroker.publish(BROKER_MESSAGES_TYPES.PROXY_SERVER_EVENT, incomingPayload);
           await handler(this.ws, incomingPayload.data);
         } catch (error) {
           logger.error(error, { tag: 'WEBSOCKET CLIENT' });

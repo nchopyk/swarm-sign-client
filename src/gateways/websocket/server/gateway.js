@@ -42,7 +42,12 @@ class WebsocketGateway {
         connection.on('message', (buffer) => this._proxyEventToServer(connection, buffer));
         connection.on('pong', () => heartbeat(connection));
         connection.on('error', (err) => logger.error(err, { tag: 'WEBSOCKET GATEWAY' }));
-        connection.on('close', () => logger.warn('connection closed', { tag: 'WEBSOCKET GATEWAY' }));
+        connection.on('close', () => {
+          logger.warn('connection closed', { tag: 'WEBSOCKET GATEWAY' });
+          if (this.connections[connection.clientId]) {
+            delete this.connections[connection.clientId];
+          }
+        });
       });
 
       this.server.on('close', () => {
@@ -55,10 +60,18 @@ class WebsocketGateway {
     try {
       const parsedData = JSON.parse(buffer.toString());
 
+      logger.info(`incoming message: ${buffer.toString()}`, { tag: 'WEBSOCKET GATEWAY' });
+
       const { error, value: incomingPayload } = validate({ schema: validationSchemas.incomingMessage, data: parsedData });
 
       if (error) {
+        logger.error(error, { tag: 'WEBSOCKET GATEWAY' });
         return sendError({ connection, errorType: ERROR_TYPES.INVALID_DATA_FORMAT, message: error.message });
+      }
+
+      if (!this.connections[incomingPayload.clientId]) {
+        this.connections[incomingPayload.clientId] = connection;
+        connection.clientId = incomingPayload.clientId;
       }
 
       const handler = this.incommingHandlers[incomingPayload.event];
@@ -69,6 +82,7 @@ class WebsocketGateway {
         return;
       }
 
+      logger.warn(`no additional handler found for event: ${incomingPayload.event}`, { tag: 'WEBSOCKET GATEWAY' });
       processMessageBroker.publish(BROKER_MESSAGES_TYPES.PROXY_CLIENT_EVENT, incomingPayload);
     } catch (error) {
       sendError({ connection, errorType: ERROR_TYPES.INTERNAL_FAILURE, message: error.message });
@@ -99,6 +113,9 @@ class WebsocketGateway {
   }
 
   async stop() {
+    Object.values(this.connections).forEach((connection) => connection.close());
+    this.connections = {};
+
     if (!this.server) {
       return;
     }
