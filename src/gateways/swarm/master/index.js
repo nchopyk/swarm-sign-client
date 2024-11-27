@@ -42,7 +42,7 @@ class MasterUDPGateway {
 
         const address = this.server.address();
 
-        ipcMain.sendCommand(ipcCommands.UPDATE_MASTER_GATEWAY, { address: config.LOCAL_ADDRESS, port: address.port });
+        ipcMain.sendCommand(ipcCommands.UPDATE_MASTER_GATEWAY, { address: this.server.address().address, port: this.server.address().port });
 
         logger.info(`server listening ${address.address}:${address.port}`, { tag: 'UDP SERVER | MASTER | ON LISTENING' });
         resolve(this.server);

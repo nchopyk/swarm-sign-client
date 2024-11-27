@@ -9,6 +9,7 @@ const commands = {
   UPDATE_AVAILABLE_MASTERS: 'update-available-masters',
   UPDATE_SELECTED_MASTER:  'update-selected-master',
   UPDATE_MASTER_GATEWAY: 'update-master-gateway',
+  UPDATE_MASTER_WEB_SOCKET: 'update-master-web-socket',
   RESET_DATA: 'reset-data',
 };
 

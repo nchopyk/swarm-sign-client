@@ -12,5 +12,6 @@ contextBridge.exposeInMainWorld('IPC', {
   onAvailableMastersUpdate: (callback) => ipcRenderer.on(ipcCommands.UPDATE_AVAILABLE_MASTERS, (_event, data) => callback(data)),
   onSelectedMasterUpdate: (callback) => ipcRenderer.on(ipcCommands.UPDATE_SELECTED_MASTER, (_event, data) => callback(data)),
   onMasterGatewayUpdate: (callback) => ipcRenderer.on(ipcCommands.UPDATE_MASTER_GATEWAY, (_event, data) => callback(data)),
+  onMasterWebSocketUpdate: (callback) => ipcRenderer.on(ipcCommands.UPDATE_MASTER_WEB_SOCKET, (_event, data) => callback(data)),
   onResetData: (callback) => ipcRenderer.on(ipcCommands.RESET_DATA, (_event, data) => callback(data)),
 });

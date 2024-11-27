@@ -3,7 +3,7 @@ const fs = require('fs');
 class LocalStorage {
   constructor() {
     this.items = {};
-    this.filename = 'local-storage.json';
+    this.filename = `local-storage${process.env.INSTANCE_ID ? process.env.INSTANCE_ID : ''}.json`;
   }
 
   async init() {

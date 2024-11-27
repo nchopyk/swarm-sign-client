@@ -14,11 +14,11 @@ function createWindow() {
     }
   });
 
-  mainWindow.loadURL('http://localhost:5174');
+  mainWindow.loadURL('http://localhost:5173');
 
   ipcMain.setMainWindow(mainWindow);
 
-  mainWindow.webContents.openDevTools();
+  // mainWindow.webContents.openDevTools();
   // start connection client after main window is created
 
   mainWindow.webContents.on('did-finish-load', async () => {
@@ -27,6 +27,8 @@ function createWindow() {
   });
 
 }
+
+console.log('INSTANCE_ID', process.env.INSTANCE_ID);
 
 app.whenReady().then(async () => {
   createWindow();
@@ -44,4 +46,5 @@ app.on('window-all-closed', async () => {
   }
 
   await connectionClient.stop();
+  process.exit();
 });

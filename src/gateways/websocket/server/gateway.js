@@ -5,6 +5,8 @@ const processMessageBroker = require('../../../modules/message-broker');
 const { WebSocketServer } = require('ws');
 const { heartbeat, initHealthCheckInterval, sendError, validate } = require('./internal-utils');
 const { BROKER_MESSAGES_TYPES, ERROR_TYPES } = require('../constants');
+const ipcMain = require('../../../../electron/ipc-main');
+const ipcCommands = require('../../../../electron/ipc-commands');
 
 
 class WebsocketGateway {
@@ -18,10 +20,16 @@ class WebsocketGateway {
 
   async start() {
     return new Promise((resolve, reject) => {
-      this.server = new WebSocketServer({ port: config.WS_PORT });
+      this.server = new WebSocketServer({ port: config.WS_PORT, host: config.LOCAL_ADDRESS });
 
       this.server.on('listening', () => {
         logger.info(`server is listening on port ${config.WS_PORT}`, { tag: 'WEBSOCKET GATEWAY' });
+
+        ipcMain.sendCommand(ipcCommands.UPDATE_MASTER_WEB_SOCKET, {
+          address: this.server.address().address,
+          port: this.server.address().port,
+          connections: Object.keys(this.connections).length
+        });
 
         this.healthcheckInterval = initHealthCheckInterval(this.server);
         processMessageBroker.subscribe(BROKER_MESSAGES_TYPES.PROXY_SERVER_EVENT, (payload) => this._proxyEventToClient(payload));
@@ -46,12 +54,19 @@ class WebsocketGateway {
           logger.warn('connection closed', { tag: 'WEBSOCKET GATEWAY' });
           if (this.connections[connection.clientId]) {
             delete this.connections[connection.clientId];
+            ipcMain.sendCommand(ipcCommands.UPDATE_MASTER_WEB_SOCKET, {
+              address: this.server.address().address,
+              port: this.server.address().port,
+              connections: Object.keys(this.connections).length
+            });
           }
         });
       });
 
       this.server.on('close', () => {
         clearInterval(this.healthcheckInterval);
+        this.healthcheckInterval = null;
+        ipcMain.sendCommand(ipcCommands.UPDATE_MASTER_WEB_SOCKET, { address: null, port: null, connections: 0 });
       });
     });
   }
@@ -72,6 +87,12 @@ class WebsocketGateway {
       if (!this.connections[incomingPayload.clientId]) {
         this.connections[incomingPayload.clientId] = connection;
         connection.clientId = incomingPayload.clientId;
+        ipcMain.sendCommand(ipcCommands.UPDATE_MASTER_WEB_SOCKET, {
+          address: this.server.address().address,
+          port: this.server.address().port,
+          connections: Object.keys(this.connections).length
+        });
+
       }
 
       const handler = this.incommingHandlers[incomingPayload.event];
