@@ -8,6 +8,10 @@ const ipcMain = require('../../../../electron/ipc-main');
 
 class MasterUDPGateway {
   constructor() {
+    this.server = null;
+  }
+
+  async start() {
     this.server = dgram.createSocket('udp4');
 
     this.server.on('message', async (data, rinfo) => {
@@ -27,12 +31,6 @@ class MasterUDPGateway {
       logger.error(err, { tag: 'UDP SERVER | MASTER | ON ERROR' });
       this.server.close();
     });
-  }
-
-  async start() {
-    if (!this.server) {
-      this.server = dgram.createSocket('udp4');
-    }
 
     return new Promise((resolve, reject) => {
       this.server.on('error', (err) => {
@@ -55,6 +53,10 @@ class MasterUDPGateway {
   }
 
   async stop() {
+    if (!this.server) {
+      return;
+    }
+
     return new Promise((resolve, reject) => {
       this.server.close((err) => {
         if (err) {
@@ -62,6 +64,7 @@ class MasterUDPGateway {
           return;
         }
 
+        this.server.removeAllListeners();
         this.server = null;
 
         ipcMain.sendCommand(ipcCommands.UPDATE_MASTER_GATEWAY, { address: null, port: null });
