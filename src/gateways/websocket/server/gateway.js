@@ -1,13 +1,14 @@
 const config = require('../../../config');
 const validationSchemas = require('../validation-schemas');
-const logger = require('../../../modules/logger');
 const processMessageBroker = require('../../../modules/message-broker');
 const { WebSocketServer } = require('ws');
-const { heartbeat, initHealthCheckInterval, sendError, validate } = require('./internal-utils');
+const { heartbeat, initHealthCheckInterval, sendError, validate } = require('./internal.utils');
 const { BROKER_MESSAGES_TYPES, ERROR_TYPES } = require('../constants');
 const ipcMain = require('../../../../electron/ipc-main');
 const ipcCommands = require('../../../../electron/ipc-commands');
+const Logger = require('../../../modules/Logger');
 
+const logger = new Logger().tag('WEBSOCKET | MASTER', 'magenta');
 
 class WebsocketGateway {
   constructor() {
@@ -23,7 +24,7 @@ class WebsocketGateway {
       this.server = new WebSocketServer({ port: config.WS_PORT, host: config.LOCAL_ADDRESS });
 
       this.server.on('listening', () => {
-        logger.info(`server is listening on port ${config.WS_PORT}`, { tag: 'WEBSOCKET GATEWAY' });
+        logger.info(`server is listening on port ${config.WS_PORT}`);
 
         ipcMain.sendCommand(ipcCommands.UPDATE_MASTER_WEB_SOCKET, {
           address: this.server.address().address,
@@ -38,20 +39,20 @@ class WebsocketGateway {
       });
 
       this.server.on('error', (err) => {
-        logger.error(err, { tag: 'WEBSOCKET GATEWAY' });
+        logger.error(err);
 
         reject(err);
       });
 
       this.server.on('connection', (connection, req) => {
         connection.isAlive = true;
-        logger.info(`new connection from ${req.socket.remoteAddress}`, { tag: 'WEBSOCKET GATEWAY' });
+        logger.info(`new connection from ${req.socket.remoteAddress}`);
 
         connection.on('message', (buffer) => this._proxyEventToServer(connection, buffer));
         connection.on('pong', () => heartbeat(connection));
-        connection.on('error', (err) => logger.error(err, { tag: 'WEBSOCKET GATEWAY' }));
+        connection.on('error', (err) => logger.error(err));
         connection.on('close', () => {
-          logger.warn('connection closed', { tag: 'WEBSOCKET GATEWAY' });
+          logger.warn('connection closed');
           if (this.connections[connection.clientId]) {
             delete this.connections[connection.clientId];
             ipcMain.sendCommand(ipcCommands.UPDATE_MASTER_WEB_SOCKET, {
@@ -75,12 +76,12 @@ class WebsocketGateway {
     try {
       const parsedData = JSON.parse(buffer.toString());
 
-      logger.info(`incoming message: ${buffer.toString()}`, { tag: 'WEBSOCKET GATEWAY' });
+      logger.info(`incoming message: ${buffer.toString()}`);
 
       const { error, value: incomingPayload } = validate({ schema: validationSchemas.incomingMessage, data: parsedData });
 
       if (error) {
-        logger.error(error, { tag: 'WEBSOCKET GATEWAY' });
+        logger.error(error);
         return sendError({ connection, errorType: ERROR_TYPES.INVALID_DATA_FORMAT, message: error.message });
       }
 
@@ -92,7 +93,6 @@ class WebsocketGateway {
           port: this.server.address().port,
           connections: Object.keys(this.connections).length
         });
-
       }
 
       const handler = this.incommingHandlers[incomingPayload.event];
@@ -103,11 +103,11 @@ class WebsocketGateway {
         return;
       }
 
-      logger.warn(`no additional handler found for event: ${incomingPayload.event}`, { tag: 'WEBSOCKET GATEWAY' });
+      logger.warn(`no additional handler found for event: ${incomingPayload.event}`);
       processMessageBroker.publish(BROKER_MESSAGES_TYPES.PROXY_CLIENT_EVENT, incomingPayload);
     } catch (error) {
       sendError({ connection, errorType: ERROR_TYPES.INTERNAL_FAILURE, message: error.message });
-      logger.error(error, { tag: 'WEBSOCKET GATEWAY' });
+      logger.error(error);
     }
   }
 
@@ -116,7 +116,7 @@ class WebsocketGateway {
       const connection = this.connections[outgoingPayload.clientId];
 
       if (!connection) {
-        return logger.error(`no connection found for clientId: ${outgoingPayload.clientId}`, { tag: 'WEBSOCKET GATEWAY' });
+        return logger.error(`no connection found for clientId: ${outgoingPayload.clientId}`);
       }
 
       const handler = this.outgoungHandlers[outgoingPayload.event];
@@ -129,7 +129,7 @@ class WebsocketGateway {
 
       connection.send(JSON.stringify(outgoingPayload));
     } catch (error) {
-      logger.error(error, { tag: 'WEBSOCKET GATEWAY' });
+      logger.error(error);
     }
   }
 

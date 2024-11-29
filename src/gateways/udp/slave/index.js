@@ -1,26 +1,27 @@
 const dgram = require('dgram');
 const config = require('../../../config');
-const logger = require('../../../modules/logger');
 const messagesProcessor = require('./messages-processor');
 const messagesBuilder = require('./messages-builder');
 const responsesBroker = require('../../../modules/message-broker');
 const ipcCommands = require('../../../../electron/ipc-commands');
 const ipcMain = require('../../../../electron/ipc-main');
 const { MESSAGES_TYPES } = require('../constants');
+const Logger = require('../../../modules/Logger');
 
+const logger = new Logger().tag('UDP SERVER | SLAVE', 'yellow');
 
 class SlaveUDPGateway {
   constructor() {
     this.server = dgram.createSocket('udp4');
 
     this.server.on('error', (err) => {
-      logger.error(err, { tag: 'UDP SERVER | SLAVE | ON ERROR' });
+      logger.error(err);
       this.server.close();
     });
 
     this.server.on('message', (msg, rinfo) => {
       try {
-        logger.info(`Received message from ${rinfo.address}:${rinfo.port}: ${msg}`, { tag: 'UDP SERVER | SLAVE | ON MESSAGE' });
+        logger.info(`Received message from ${rinfo.address}:${rinfo.port}: ${msg}`);
 
         const message = JSON.parse(msg.toString());
         const sender = { address: rinfo.address, port: rinfo.port };
@@ -28,7 +29,7 @@ class SlaveUDPGateway {
         messagesProcessor.process(this.server, sender, message);
 
       } catch (error) {
-        logger.error(error, { tag: 'UDP SERVER | SLAVE | ON MESSAGE' });
+        logger.error(error);
       }
     });
   }
@@ -48,7 +49,7 @@ class SlaveUDPGateway {
 
         const address = this.server.address();
 
-        logger.info(`server listening ${address.address}:${address.port}`, { tag: 'UDP SERVER | SLAVE | ON LISTENING' });
+        logger.info(`server listening ${address.address}:${address.port}`);
         resolve(this.server);
       });
 
@@ -65,7 +66,7 @@ class SlaveUDPGateway {
           return;
         }
 
-        logger.info('server closed', { tag: 'UDP SERVER | SLAVE | ON CLOSE' });
+        logger.info('server closed');
         this.server = null;
         resolve();
       });
@@ -133,11 +134,11 @@ class SlaveUDPGateway {
 
     this.server.send(msg, 0, msg.length, config.MASTER_PORT, config.BROADCAST_ADDRESS, (err) => {
       if (err) {
-        logger.error(err, { tag: 'UDP SERVER | SLAVE | BROADCAST MESSAGE' });
+        logger.error(err);
         return;
       }
 
-      logger.info(`sent broadcast message: ${JSON.stringify(message)}`, { tag: 'UDP SERVER | SLAVE | BROADCAST MESSAGE' });
+      logger.info(`sent broadcast message: ${JSON.stringify(message)}`);
     });
   }
 
@@ -150,13 +151,11 @@ class SlaveUDPGateway {
 
     this.server.send(msg, 0, msg.length, masterServer.port, masterServer.address, (err) => {
       if (err) {
-        logger.error(err, { tag: 'UDP SERVER | SLAVE | UNICAST MESSAGE' });
+        logger.error(err);
         return;
       }
 
-      logger.info(`sent unicast message to ${masterServer.address}:${masterServer.port}: ${JSON.stringify(message)}`, {
-        tag: 'UDP SERVER | SLAVE | UNICAST MESSAGE'
-      });
+      logger.info(`sent unicast message to ${masterServer.address}:${masterServer.port}: ${JSON.stringify(message)}`);
     });
   }
 

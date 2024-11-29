@@ -1,10 +1,11 @@
 const dgram = require('dgram');
 const config = require('../../../config');
-const logger = require('../../../modules/logger');
 const messagesProcessor = require('./messages-processor');
 const ipcCommands = require('../../../../electron/ipc-commands');
 const ipcMain = require('../../../../electron/ipc-main');
+const Logger = require('../../../modules/Logger');
 
+const logger = new Logger().tag('UDP SERVER | MASTER | MESSAGE PROCESSOR', 'yellow');
 
 class MasterUDPGateway {
   constructor() {
@@ -19,16 +20,16 @@ class MasterUDPGateway {
         const message = JSON.parse(data.toString());
         const sender = { address: rinfo.address, port: rinfo.port };
 
-        logger.info(`incoming message from ${sender.address}:${sender.port}: ${data.toString()}`, { tag: 'UDP SERVER | MASTER | ON MESSAGE' });
+        logger.info(`incoming message from ${sender.address}:${sender.port}: ${data.toString()}`);
 
         await messagesProcessor.process(this.server, sender, message);
       } catch (error) {
-        logger.error(error, { tag: 'UDP SERVER | MASTER | ON MESSAGE' });
+        logger.error(error);
       }
     });
 
     this.server.on('error', (err) => {
-      logger.error(err, { tag: 'UDP SERVER | MASTER | ON ERROR' });
+      logger.error(err);
       this.server.close();
     });
 
@@ -44,7 +45,7 @@ class MasterUDPGateway {
 
         ipcMain.sendCommand(ipcCommands.UPDATE_MASTER_GATEWAY, { address: this.server.address().address, port: this.server.address().port });
 
-        logger.info(`server listening ${address.address}:${address.port}`, { tag: 'UDP SERVER | MASTER | ON LISTENING' });
+        logger.info(`server listening ${address.address}:${address.port}`);
         resolve(this.server);
       });
 
@@ -54,6 +55,7 @@ class MasterUDPGateway {
 
   async stop() {
     if (!this.server) {
+      logger.warn('server is not running');
       return;
     }
 
@@ -69,7 +71,7 @@ class MasterUDPGateway {
 
         ipcMain.sendCommand(ipcCommands.UPDATE_MASTER_GATEWAY, { address: null, port: null });
 
-        logger.info('server closed', { tag: 'UDP SERVER | MASTER | ON CLOSE' });
+        logger.info('server closed');
         resolve();
       });
     });

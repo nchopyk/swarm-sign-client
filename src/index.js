@@ -1,8 +1,7 @@
-const logger = require('./modules/logger');
 const config = require('./config');
 const helpers = require('./modules/helpers');
-const slaveGateway = require('./gateways/swarm/slave');
-const masterGateway = require('./gateways/swarm/master');
+const slaveGateway = require('./gateways/udp/slave');
+const masterGateway = require('./gateways/udp/master');
 const websocketGateway = require('./gateways/websocket/server/gateway');
 const websocketClient = require('./gateways/websocket/client');
 const localStorage = require('./modules/local-storage');
@@ -10,19 +9,24 @@ const ipcCommands = require('../electron/ipc-commands');
 const ipcMain = require('../electron/ipc-main');
 const topology = require('./topology');
 const rating = require('./rating');
+const Logger = require('./modules/Logger');
+
+const logger = new Logger().tag('INDEX', 'blue');
+
 
 function selectBestMaster(masters) {
   return masters.sort((a, b) => a.connections - b.connections)[0];
 }
 
 const start = async () => {
+  logger.info(`Starting application${process.env.INSTANCE_ID ? ` instance #${process.env.INSTANCE_ID}` : ''}`);
   await localStorage.init();
 
   let connectionMode = 'proxy';
 
   ipcMain.sendCommand(ipcCommands.UPDATE_CONNECTION_MODE, { mode: connectionMode });
 
-  logger.info('Scanning for masters', { tag: 'INDEX' });
+  logger.info('Scanning for masters');
   await slaveGateway.start();
 
 
@@ -35,7 +39,7 @@ const start = async () => {
   };
 
   if (!masters.length) {
-    logger.info('No masters found, becoming master', { tag: 'INDEX' });
+    logger.info('No masters found, becoming master');
     await new Promise((resolve) => setTimeout(resolve, 2500));
 
     await websocketGateway.start();
@@ -48,7 +52,7 @@ const start = async () => {
     ipcMain.sendCommand(ipcCommands.UPDATE_MASTER_RATING, rating);
   } else {
     const masterToConnect = selectBestMaster(masters);
-    logger.info(`Selected master ${masterToConnect.id} with ${masterToConnect.connections} connections`, { tag: 'INDEX' });
+    logger.info(`Selected master ${masterToConnect.id} with ${masterToConnect.connections} connections`);
     const { address, port } = await slaveGateway.acknowledgeMaster(masterToConnect);
 
     serverConnectionParams = { address, port, type: 'master' };

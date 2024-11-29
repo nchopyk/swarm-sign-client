@@ -1,4 +1,7 @@
 const ipcCommands = require('./ipc-commands');
+const Logger = require('../src/modules/Logger');
+
+const logger = new Logger().tag('ELECTRON | IPC MAIN LISTENER', 'cyan');
 
 
 class IPCMainListener {
@@ -11,15 +14,15 @@ class IPCMainListener {
   }
 
   sendCommand(command, data) {
-    console.log(`[ELECTRON | IPC MAIN LISTENER] sending command ${command}`);
+    logger.info(`sending command ${command}`);
 
     if (!this.mainWindow) {
-      console.error('[ELECTRON | IPC MAIN LISTENER] main window is not set');
+      logger.error(new Error('mainWindow is not set'));
       return;
     }
 
     if (!Object.values(ipcCommands).includes(command)) {
-      console.error(`[ELECTRON | IPC MAIN LISTENER] command ${command} is not valid`);
+      logger.error(new Error('invalid command'));
       return;
     }
 

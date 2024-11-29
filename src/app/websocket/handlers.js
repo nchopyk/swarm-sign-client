@@ -1,11 +1,13 @@
-const config = require('../config');
-const localStorage = require('../modules/local-storage');
-const logger = require('../modules/logger');
-const ipcMain = require('../../electron/ipc-main');
-const ipcCommands = require('../../electron/ipc-commands');
-const { CLIENT_EVENTS, ERROR_TYPES } = require('../gateways/websocket/constants');
-const { sendMessage } = require('../gateways/websocket/client/internal-utils');
+const config = require('../../config');
+const localStorage = require('../../modules/local-storage');
+const ipcMain = require('../../../electron/ipc-main');
+const ipcCommands = require('../../../electron/ipc-commands');
+const { CLIENT_EVENTS, ERROR_TYPES } = require('../constants');
+const { sendMessage } = require('../../gateways/websocket/client/internal.utils');
 const { buildErrorMessages } = require('./message-builders');
+const Logger = require('../../modules/Logger');
+
+const logger = new Logger().tag('WEBSOCKET | CLIENT | APP', 'lime');
 
 
 const onConnection = async (connection, address, port, type) => {
@@ -21,10 +23,10 @@ const onConnection = async (connection, address, port, type) => {
   }
 
   if (screenId) {
-    logger.info(`logging in with screenId: ${screenId}`, { tag: 'WEBSOCKET CLIENT | EVENT HANDLERS | ON CONNECTION' });
+    logger.info(`logging in with screenId: ${screenId}`);
     sendMessage({ connection, clientId: config.CLIENT_ID, event: CLIENT_EVENTS.LOGIN, data: { screenId } });
   } else {
-    logger.info('no screenId found, sending new screen event', { tag: 'WEBSOCKET CLIENT | EVENT HANDLERS | ON CONNECTION' });
+    logger.info('no screenId found, sending new screen event');
     sendMessage({ connection, clientId: config.CLIENT_ID, event: CLIENT_EVENTS.NEW_SCREEN, data: null });
   }
 };
@@ -37,13 +39,13 @@ const onInvalidIncomingMessage = (connection, error) => sendMessage({
 });
 
 const onHandlerMissing = (connection, event) => {
-  logger.warn(`no handler found for event: ${event}`, { tag: 'WEBSOCKET CLIENT | EVENT HANDLERS | ON HANDLER MISSING' });
+  logger.warn(`no handler found for event: ${event}`);
 };
 
 const onAuthCode = (connection, data) => {
   const { code } = data;
 
-  logger.info(`received authCode: ${code}`, { tag: 'WEBSOCKET CLIENT | EVENT HANDLERS | ON AUTH CODE' });
+  logger.info(`received authCode: ${code}`);
 
   ipcMain.sendCommand(ipcCommands.SHOW_AUTH_SCREEN, { code });
 };
@@ -51,48 +53,48 @@ const onAuthCode = (connection, data) => {
 const onAuthSuccess = async (connection, data) => {
   const { screenId } = data;
 
-  logger.info(`received screenId: ${screenId}`, { tag: 'WEBSOCKET CLIENT | EVENT HANDLERS | ON AUTH SUCCESS' });
+  logger.info(`received screenId: ${screenId}`);
 
   await localStorage.setItem('clientId', config.CLIENT_ID);
   await localStorage.setItem('screenId', screenId);
 
-  logger.info(`logging in with screenId: ${screenId}`, { tag: 'WEBSOCKET CLIENT | EVENT HANDLERS | ON AUTH SUCCESS' });
+  logger.info(`logging in with screenId: ${screenId}`);
   sendMessage({ connection, clientId: config.CLIENT_ID, event: CLIENT_EVENTS.LOGIN, data: { screenId } });
 };
 
 const onLoginSuccess = (connection, data) => {
-  logger.info('login successful', { tag: 'WEBSOCKET CLIENT | EVENT HANDLERS | ON LOGIN SUCCESS' });
+  logger.info('login successful');
 
   ipcMain.sendCommand(ipcCommands.LOGIN_SUCCESS, data);
 };
 
 const onLoginFailure = async (connection, data) => {
-  logger.warn('login failed', { tag: 'WEBSOCKET CLIENT | EVENT HANDLERS | ON LOGIN FAILURE' });
+  logger.warn('login failed');
 
   ipcMain.sendCommand(ipcCommands.LOGIN_FAILURE, data);
 
   await localStorage.removeItem('screenId');
   await localStorage.removeItem('clientId');
 
-  logger.info('screenId and clientId removed', { tag: 'WEBSOCKET CLIENT | EVENT HANDLERS | ON LOGIN FAILURE' });
+  logger.info('screenId and clientId removed');
 
   onConnection(connection);
 };
 
 const onSchedule = (connection, data) => {
-  logger.info('received schedule', { tag: 'WEBSOCKET CLIENT | EVENT HANDLERS | ON SCHEDULE' });
+  logger.info('received schedule');
   ipcMain.sendCommand(ipcCommands.START_PLAYER, data);
 };
 
 const onError = (connection, data) => {
-  logger.warn(`received error: ${data.message}`, { tag: 'WEBSOCKET CLIENT | EVENT HANDLERS | ON ERROR' });
+  logger.warn(`received error: ${data.message}`);
 };
 
 const onReset = async (connection) => {
   await localStorage.removeItem('screenId');
   await localStorage.removeItem('clientId');
 
-  logger.info('screenId and clientId removed', { tag: 'WEBSOCKET CLIENT | EVENT HANDLERS | ON RESET' });
+  logger.info('screenId and clientId removed');
   ipcMain.sendCommand(ipcCommands.RESET_DATA);
 
   await new Promise((resolve) => setTimeout(resolve, 2000));

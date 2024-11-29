@@ -1,7 +1,9 @@
 const messagesBuilder = require('./messages-builder');
 const config = require('../../../config');
-const logger = require('../../../modules/logger');
+const Logger = require('../../../modules/logger');
 const { MESSAGES_TYPES } = require('../constants');
+
+const logger = new Logger().tag('UDP SERVER | MASTER | MESSAGE PROCESSOR', 'cyan');
 
 class MessagesProcessor {
   constructor() {
@@ -27,10 +29,10 @@ class MessagesProcessor {
 
     server.send(JSON.stringify(response), sender.port, sender.address, (err) => {
       if (err) {
-        logger.error(err, { tag: 'UDP SERVER | MASTER | MESSAGE PROCESSOR' });
+        logger.error(err);
       }
 
-      logger.info(`sent connect request response to ${sender.address}:${sender.port}`, { tag: 'UDP SERVER | MASTER | MESSAGE PROCESSOR' });
+      logger.info(`sent connect request response to ${sender.address}:${sender.port}`);
     });
   }
 
@@ -42,10 +44,10 @@ class MessagesProcessor {
 
     server.send(JSON.stringify(response), sender.port, sender.address, (err) => {
       if (err) {
-        logger.error(err, { tag: 'UDP SERVER | MASTER | MESSAGE PROCESSOR' });
+        logger.error(err);
       }
 
-      logger.info(`sent acknowledge connect request response to ${sender.address}:${sender.port}`, { tag: 'UDP SERVER | MASTER | MESSAGE PROCESSOR' });
+      logger.info(`sent acknowledge connect request response to ${sender.address}:${sender.port}`);
     });
   }
 }

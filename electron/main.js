@@ -28,8 +28,6 @@ function createWindow() {
 
 }
 
-console.log('INSTANCE_ID', process.env.INSTANCE_ID);
-
 app.whenReady().then(async () => {
   createWindow();
 
