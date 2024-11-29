@@ -5,8 +5,8 @@ const masterGateway = require('./gateways/udp/master');
 const websocketGateway = require('./gateways/websocket/server/gateway');
 const websocketClient = require('./gateways/websocket/client');
 const localStorage = require('./modules/local-storage');
-const ipcCommands = require('../electron/ipc-commands');
-const ipcMain = require('../electron/ipc-main');
+const { IPC_COMMANDS } = require('./app/constants');
+const ipcMain = require('./app/ipc-main');
 const topology = require('./topology');
 const rating = require('./rating');
 const Logger = require('./modules/Logger');
@@ -24,7 +24,7 @@ const start = async () => {
 
   let connectionMode = 'proxy';
 
-  ipcMain.sendCommand(ipcCommands.UPDATE_CONNECTION_MODE, { mode: connectionMode });
+  ipcMain.sendCommand(IPC_COMMANDS.UPDATE_CONNECTION_MODE, { mode: connectionMode });
 
   logger.info('Scanning for masters');
   await slaveGateway.start();
@@ -46,10 +46,10 @@ const start = async () => {
     await masterGateway.start();
 
     connectionMode = 'direct';
-    ipcMain.sendCommand(ipcCommands.UPDATE_CONNECTION_MODE, { mode: connectionMode });
+    ipcMain.sendCommand(IPC_COMMANDS.UPDATE_CONNECTION_MODE, { mode: connectionMode });
 
-    ipcMain.sendCommand(ipcCommands.UPDATE_MASTER_TOPOLOGY, topology);
-    ipcMain.sendCommand(ipcCommands.UPDATE_MASTER_RATING, rating);
+    ipcMain.sendCommand(IPC_COMMANDS.UPDATE_MASTER_TOPOLOGY, topology);
+    ipcMain.sendCommand(IPC_COMMANDS.UPDATE_MASTER_RATING, rating);
   } else {
     const masterToConnect = selectBestMaster(masters);
     logger.info(`Selected master ${masterToConnect.id} with ${masterToConnect.connections} connections`);

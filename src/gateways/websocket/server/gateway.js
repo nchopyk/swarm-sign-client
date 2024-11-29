@@ -4,8 +4,8 @@ const processMessageBroker = require('../../../modules/message-broker');
 const { WebSocketServer } = require('ws');
 const { heartbeat, initHealthCheckInterval, sendError, validate } = require('./internal.utils');
 const { BROKER_MESSAGES_TYPES, ERROR_TYPES } = require('../constants');
-const ipcMain = require('../../../../electron/ipc-main');
-const ipcCommands = require('../../../../electron/ipc-commands');
+const ipcMain = require('../../../app/ipc-main');
+const { IPC_COMMANDS } = require('../../../app/constants');
 const Logger = require('../../../modules/Logger');
 
 const logger = new Logger().tag('WEBSOCKET | MASTER', 'magenta');
@@ -26,7 +26,7 @@ class WebsocketGateway {
       this.server.on('listening', () => {
         logger.info(`server is listening on port ${config.WS_PORT}`);
 
-        ipcMain.sendCommand(ipcCommands.UPDATE_MASTER_WEB_SOCKET, {
+        ipcMain.sendCommand(IPC_COMMANDS.UPDATE_MASTER_WEB_SOCKET, {
           address: this.server.address().address,
           port: this.server.address().port,
           connections: Object.keys(this.connections).length
@@ -55,7 +55,7 @@ class WebsocketGateway {
           logger.warn('connection closed');
           if (this.connections[connection.clientId]) {
             delete this.connections[connection.clientId];
-            ipcMain.sendCommand(ipcCommands.UPDATE_MASTER_WEB_SOCKET, {
+            ipcMain.sendCommand(IPC_COMMANDS.UPDATE_MASTER_WEB_SOCKET, {
               address: this.server.address().address,
               port: this.server.address().port,
               connections: Object.keys(this.connections).length
@@ -67,7 +67,7 @@ class WebsocketGateway {
       this.server.on('close', () => {
         clearInterval(this.healthcheckInterval);
         this.healthcheckInterval = null;
-        ipcMain.sendCommand(ipcCommands.UPDATE_MASTER_WEB_SOCKET, { address: null, port: null, connections: 0 });
+        ipcMain.sendCommand(IPC_COMMANDS.UPDATE_MASTER_WEB_SOCKET, { address: null, port: null, connections: 0 });
       });
     });
   }
@@ -88,7 +88,7 @@ class WebsocketGateway {
       if (!this.connections[incomingPayload.clientId]) {
         this.connections[incomingPayload.clientId] = connection;
         connection.clientId = incomingPayload.clientId;
-        ipcMain.sendCommand(ipcCommands.UPDATE_MASTER_WEB_SOCKET, {
+        ipcMain.sendCommand(IPC_COMMANDS.UPDATE_MASTER_WEB_SOCKET, {
           address: this.server.address().address,
           port: this.server.address().port,
           connections: Object.keys(this.connections).length

@@ -2,7 +2,7 @@
   "name": "swarm-sign-client",
   "version": "1.0.0",
   "description": "",
-  "main": "electron/main.js",
+  "main": "src/app/main.js",
   "scripts": {
     "start": "electron .",
     "start-instance": "export INSTANCE_ID=$ID && npm run start"

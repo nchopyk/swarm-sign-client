@@ -1,7 +1,7 @@
 const config = require('../../config');
 const localStorage = require('../../modules/local-storage');
-const ipcMain = require('../../../electron/ipc-main');
-const ipcCommands = require('../../../electron/ipc-commands');
+const ipcMain = require('../ipc-main');
+const { IPC_COMMANDS } = require('../constants');
 const { CLIENT_EVENTS, ERROR_TYPES } = require('../constants');
 const { sendMessage } = require('../../gateways/websocket/client/internal.utils');
 const { buildErrorMessages } = require('./message-builders');
@@ -11,7 +11,7 @@ const logger = new Logger().tag('WEBSOCKET | CLIENT | APP', 'lime');
 
 
 const onConnection = async (connection, address, port, type) => {
-  ipcMain.sendCommand(ipcCommands.CONNECTION_ESTABLISHED, { type, address, port });
+  ipcMain.sendCommand(IPC_COMMANDS.CONNECTION_ESTABLISHED, { type, address, port });
 
   await new Promise((resolve) => setTimeout(resolve, 2500));
 
@@ -47,7 +47,7 @@ const onAuthCode = (connection, data) => {
 
   logger.info(`received authCode: ${code}`);
 
-  ipcMain.sendCommand(ipcCommands.SHOW_AUTH_SCREEN, { code });
+  ipcMain.sendCommand(IPC_COMMANDS.SHOW_AUTH_SCREEN, { code });
 };
 
 const onAuthSuccess = async (connection, data) => {
@@ -65,13 +65,13 @@ const onAuthSuccess = async (connection, data) => {
 const onLoginSuccess = (connection, data) => {
   logger.info('login successful');
 
-  ipcMain.sendCommand(ipcCommands.LOGIN_SUCCESS, data);
+  ipcMain.sendCommand(IPC_COMMANDS.LOGIN_SUCCESS, data);
 };
 
 const onLoginFailure = async (connection, data) => {
   logger.warn('login failed');
 
-  ipcMain.sendCommand(ipcCommands.LOGIN_FAILURE, data);
+  ipcMain.sendCommand(IPC_COMMANDS.LOGIN_FAILURE, data);
 
   await localStorage.removeItem('screenId');
   await localStorage.removeItem('clientId');
@@ -83,7 +83,7 @@ const onLoginFailure = async (connection, data) => {
 
 const onSchedule = (connection, data) => {
   logger.info('received schedule');
-  ipcMain.sendCommand(ipcCommands.START_PLAYER, data);
+  ipcMain.sendCommand(IPC_COMMANDS.START_PLAYER, data);
 };
 
 const onError = (connection, data) => {
@@ -95,7 +95,7 @@ const onReset = async (connection) => {
   await localStorage.removeItem('clientId');
 
   logger.info('screenId and clientId removed');
-  ipcMain.sendCommand(ipcCommands.RESET_DATA);
+  ipcMain.sendCommand(IPC_COMMANDS.RESET_DATA);
 
   await new Promise((resolve) => setTimeout(resolve, 2000));
 

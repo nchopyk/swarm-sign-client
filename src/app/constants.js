@@ -1,3 +1,20 @@
+const IPC_COMMANDS = {
+  CONNECTION_ESTABLISHED: 'connection-established',
+  CONNECTION_CLOSED: 'connection-closed',
+  SHOW_AUTH_SCREEN: 'show-auth-screen',
+  START_PLAYER: 'start-player',
+  LOGIN_SUCCESS: 'login-success',
+  LOGIN_FAILURE: 'login-fail',
+  UPDATE_CONNECTION_MODE: 'update-connection-mode',
+  UPDATE_AVAILABLE_MASTERS: 'update-available-masters',
+  UPDATE_SELECTED_MASTER: 'update-selected-master',
+  UPDATE_MASTER_GATEWAY: 'update-master-gateway',
+  UPDATE_MASTER_WEB_SOCKET: 'update-master-web-socket',
+  RESET_DATA: 'reset-data',
+  UPDATE_MASTER_TOPOLOGY: 'update-master-topology',
+  UPDATE_MASTER_RATING: 'update-master-rating',
+};
+
 const ERROR_TYPES = {
   INTERNAL_FAILURE: 'ERR_INTERNAL_FAILURE',
   INVALID_DATA_FORMAT: 'ERR_INVALID_DATA_FORMAT',
@@ -28,6 +45,7 @@ const SERVER_EVENTS = {
 
 
 module.exports = {
+  IPC_COMMANDS,
   ERROR_TYPES,
   CLIENT_EVENTS,
   SERVER_EVENTS,

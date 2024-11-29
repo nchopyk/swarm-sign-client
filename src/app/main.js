@@ -1,7 +1,7 @@
 const { app, BrowserWindow } = require('electron/main');
 const path = require('node:path');
 const ipcMain = require('./ipc-main');
-const connectionClient = require('../src/index');
+const connectionClient = require('../index');
 
 
 function createWindow() {

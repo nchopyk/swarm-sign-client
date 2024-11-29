@@ -2,8 +2,8 @@ const WebSocket = require('ws');
 const config = require('../../../config');
 const validationSchemas = require('../validation-schemas');
 const processMessageBroker = require('../../../modules/message-broker');
-const ipcCommands = require('../../../../electron/ipc-commands');
-const ipcMain = require('../../../../electron/ipc-main');
+const { IPC_COMMANDS } = require('../../../app/constants');
+const ipcMain = require('../../../app/ipc-main');
 const { validate } = require('./internal.utils');
 const { BROKER_MESSAGES_TYPES } = require('../constants');
 const { onInvalidIncomingMessage, onHandlerMissing, onConnection } = require('../../../app/websocket/handlers');
@@ -74,7 +74,7 @@ class Client {
       this.ws.on('close', () => {
         logger.warn('connection closed');
 
-        ipcMain.sendCommand(ipcCommands.CONNECTION_CLOSED, { type });
+        ipcMain.sendCommand(IPC_COMMANDS.CONNECTION_CLOSED, { type });
 
         this.retryConnection();
       });

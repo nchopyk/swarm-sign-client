@@ -1,8 +1,8 @@
 const dgram = require('dgram');
 const config = require('../../../config');
 const messagesProcessor = require('./messages-processor');
-const ipcCommands = require('../../../../electron/ipc-commands');
-const ipcMain = require('../../../../electron/ipc-main');
+const { IPC_COMMANDS } = require('../../../app/constants');
+const ipcMain = require('../../../app/ipc-main');
 const Logger = require('../../../modules/Logger');
 
 const logger = new Logger().tag('UDP SERVER | MASTER | MESSAGE PROCESSOR', 'yellow');
@@ -43,7 +43,7 @@ class MasterUDPGateway {
 
         const address = this.server.address();
 
-        ipcMain.sendCommand(ipcCommands.UPDATE_MASTER_GATEWAY, { address: this.server.address().address, port: this.server.address().port });
+        ipcMain.sendCommand(IPC_COMMANDS.UPDATE_MASTER_GATEWAY, { address: this.server.address().address, port: this.server.address().port });
 
         logger.info(`server listening ${address.address}:${address.port}`);
         resolve(this.server);
@@ -69,7 +69,7 @@ class MasterUDPGateway {
         this.server.removeAllListeners();
         this.server = null;
 
-        ipcMain.sendCommand(ipcCommands.UPDATE_MASTER_GATEWAY, { address: null, port: null });
+        ipcMain.sendCommand(IPC_COMMANDS.UPDATE_MASTER_GATEWAY, { address: null, port: null });
 
         logger.info('server closed');
         resolve();
