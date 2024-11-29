@@ -82,7 +82,6 @@ class Client {
             return processMessageBroker.publish(BROKER_MESSAGES_TYPES.PROXY_SERVER_EVENT, incomingPayload);
           }
 
-          processMessageBroker.publish(BROKER_MESSAGES_TYPES.PROXY_SERVER_EVENT, incomingPayload);
           await handler(this.ws, incomingPayload.data);
         } catch (error) {
           logger.error(error, { tag: 'WEBSOCKET CLIENT' });
