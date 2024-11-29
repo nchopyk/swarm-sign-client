@@ -8,6 +8,8 @@ const websocketClient = require('./gateways/websocket/client');
 const localStorage = require('./modules/local-storage');
 const ipcCommands = require('../electron/ipc-commands');
 const ipcMain = require('../electron/ipc-main');
+const topology = require('./topology');
+const rating = require('./rating');
 
 function selectBestMaster(masters) {
   return masters.sort((a, b) => a.connections - b.connections)[0];
@@ -41,6 +43,9 @@ const start = async () => {
 
     connectionMode = 'direct';
     ipcMain.sendCommand(ipcCommands.UPDATE_CONNECTION_MODE, { mode: connectionMode });
+
+    ipcMain.sendCommand(ipcCommands.UPDATE_MASTER_TOPOLOGY, topology);
+    ipcMain.sendCommand(ipcCommands.UPDATE_MASTER_RATING, rating);
   } else {
     const masterToConnect = selectBestMaster(masters);
     logger.info(`Selected master ${masterToConnect.id} with ${masterToConnect.connections} connections`, { tag: 'INDEX' });

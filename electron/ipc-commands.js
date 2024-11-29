@@ -11,6 +11,8 @@ const commands = {
   UPDATE_MASTER_GATEWAY: 'update-master-gateway',
   UPDATE_MASTER_WEB_SOCKET: 'update-master-web-socket',
   RESET_DATA: 'reset-data',
+  UPDATE_MASTER_TOPOLOGY: 'update-master-topology',
+  UPDATE_MASTER_RATING: 'update-master-rating',
 };
 
 

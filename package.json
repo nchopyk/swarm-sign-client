@@ -5,8 +5,7 @@
   "main": "electron/main.js",
   "scripts": {
     "start": "electron .",
-    "start-1": "export INSTANCE_ID=1 &&  npm run start",
-    "start-2": "export INSTANCE_ID=2 &&  npm run start"
+    "start-instance": "export INSTANCE_ID=$ID && npm run start"
   },
   "repository": {
     "type": "git",
