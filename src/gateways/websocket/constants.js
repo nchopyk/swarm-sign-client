@@ -19,8 +19,13 @@ const MASTER_SERVER_EVENTS = {
   DEVICE_RATING: 'device_rating',
 };
 
+const SLAVE_CLIENT_EVENTS = {
+  START_MASTER: 'start_master',
+};
+
 module.exports = {
   BROKER_MESSAGES_TYPES,
   ERROR_TYPES,
   MASTER_SERVER_EVENTS,
+  SLAVE_CLIENT_EVENTS,
 };

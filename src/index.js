@@ -29,8 +29,7 @@ const start = async () => {
   await slaveGateway.start();
 
 
-  // const masters = await slaveGateway.scanForMasters(helpers.generateRandomNumberInRange(600, 5000));
-  const masters = [];
+  const masters = await slaveGateway.scanForMasters(helpers.generateRandomNumberInRange(600, 5000));
 
   let serverConnectionParams = {
     type: 'server',

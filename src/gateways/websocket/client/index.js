@@ -4,12 +4,13 @@ const validationSchemas = require('../validation-schemas');
 const processMessageBroker = require('../../../modules/message-broker');
 const ipcMain = require('../../../app/ipc-main');
 const handlersMap = require('../../../app/websocket/handlers.map');
+const internalHandlers = require('./internal.handlers');
 const ratingCalculator = require('../../../modules/rating-calculator');
 const { validate, sendMessage } = require('./internal.utils');
 const { onInvalidIncomingMessage, onHandlerMissing, onConnection } = require('../../../app/websocket/handlers');
 const Logger = require('../../../modules/Logger');
 const { IPC_COMMANDS } = require('../../../app/constants');
-const { BROKER_MESSAGES_TYPES, MASTER_SERVER_EVENTS } = require('../constants');
+const { BROKER_MESSAGES_TYPES, MASTER_SERVER_EVENTS, SLAVE_CLIENT_EVENTS } = require('../constants');
 
 const logger = new Logger().tag('WEBSOCKET | CLIENT', 'green');
 
@@ -20,6 +21,9 @@ class Client {
     this.port = null;
     this.address = null;
     this.deviceRatingInterval = null;
+    this.internalHandlers = {
+      [SLAVE_CLIENT_EVENTS.START_MASTER]: internalHandlers.onMasterStart,
+    };
   }
 
   async start({ address, port, type }) {
@@ -60,6 +64,13 @@ class Client {
           const { error, value: incomingPayload } = validate({ schema: validationSchemas.incomingMessage, data: parsedData });
           if (error) {
             return onInvalidIncomingMessage(this.ws, error);
+          }
+
+          const internalHandler = this.internalHandlers[incomingPayload.event];
+
+          if (internalHandler) {
+            await internalHandler(this.ws, incomingPayload);
+            return;
           }
 
           const handler = handlersMap[incomingPayload.event];
