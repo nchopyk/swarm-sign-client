@@ -8,8 +8,7 @@ const onClientRating = async (ws, incomingMessage) => {
 
   logger.info(`received device rating info: ${JSON.stringify(ratingData)}`);
 
-  connectionsManager.updateClientRatingData(ws, ratingData);
-
+  connectionsManager.updateClientRatingData(incomingMessage.clientId, ratingData);
 };
 
 module.exports = {

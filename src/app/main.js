@@ -2,6 +2,18 @@ const { app, BrowserWindow } = require('electron/main');
 const path = require('node:path');
 const ipcMain = require('./ipc-main');
 const connectionClient = require('../index');
+const ratingCalculator = require('../modules/rating-calculator');
+const { IPC_COMMANDS } = require('./constants');
+
+const deviceRatingInterval = setInterval(async () => {
+  try {
+    const rating = await ratingCalculator.calculateCurrentDeviceRating();
+
+    ipcMain.sendCommand(IPC_COMMANDS.UPDATE_MASTER_RATING, rating);
+  } catch (error) {
+    console.error(error);
+  }
+}, 5000);
 
 
 function createWindow() {
@@ -39,6 +51,8 @@ app.whenReady().then(async () => {
 });
 
 app.on('window-all-closed', async () => {
+  clearInterval(deviceRatingInterval);
+
   if (process.platform !== 'darwin') {
     app.quit();
   }

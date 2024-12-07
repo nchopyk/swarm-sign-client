@@ -1,12 +1,6 @@
 class ConnectionsManager {
   constructor() {
     this.connections = {};
-
-    setInterval(() => {
-      for (const clientId in this.connections) {
-        console.log({ clientId, rating: this.connections[clientId].rating });
-      }
-    }, 5000);
   }
 
   addConnection(clientId, connection) {
@@ -42,7 +36,7 @@ class ConnectionsManager {
   }
 
   updateClientRatingData(clientId, ratingData) {
-    this.connections[clientId].ratingData = ratingData;
+    this.connections[clientId].rating = ratingData;
   }
 }
 

@@ -26,6 +26,12 @@ class IPCMainListener {
       return;
     }
 
+    // check if mainWindow is not destroyed
+    if (this.mainWindow.isDestroyed()) {
+      logger.error(`can't send command "${command}" because mainWindow is destroyed`);
+      return;
+    }
+
     this.mainWindow.webContents.send(command, data);
   }
 }

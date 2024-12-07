@@ -9,15 +9,8 @@ const { IPC_COMMANDS } = require('./app/constants');
 const ipcMain = require('./app/ipc-main');
 const topology = require('./topology');
 const Logger = require('./modules/Logger');
-const ratingCalculator = require('./modules/rating-calculator');
 
 const logger = new Logger().tag('INDEX', 'blue');
-
-setInterval(async () => {
-  const rating = await ratingCalculator.calculateCurrentDeviceRating();
-
-  ipcMain.sendCommand(IPC_COMMANDS.UPDATE_MASTER_RATING, rating);
-}, 5000);
 
 
 function selectBestMaster(masters) {
@@ -36,7 +29,8 @@ const start = async () => {
   await slaveGateway.start();
 
 
-  const masters = await slaveGateway.scanForMasters(helpers.generateRandomNumberInRange(600, 5000));
+  // const masters = await slaveGateway.scanForMasters(helpers.generateRandomNumberInRange(600, 5000));
+  const masters = [];
 
   let serverConnectionParams = {
     type: 'server',
