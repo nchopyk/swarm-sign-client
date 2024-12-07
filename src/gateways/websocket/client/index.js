@@ -2,10 +2,11 @@ const WebSocket = require('ws');
 const config = require('../../../config');
 const validationSchemas = require('../validation-schemas');
 const processMessageBroker = require('../../../modules/message-broker');
-const { IPC_COMMANDS } = require('../../../app/constants');
 const ipcMain = require('../../../app/ipc-main');
-const { validate } = require('./internal.utils');
-const { BROKER_MESSAGES_TYPES } = require('../constants');
+const { validate, sendMessage } = require('./internal.utils');
+const { getDeviceInfo } = require('../../../modules/device-info-retriever');
+const { IPC_COMMANDS } = require('../../../app/constants');
+const { BROKER_MESSAGES_TYPES, MASTER_SERVER_EVENTS } = require('../constants');
 const { onInvalidIncomingMessage, onHandlerMissing, onConnection } = require('../../../app/websocket/handlers');
 const handlersMap = require('../../../app/websocket/handlers.map');
 const Logger = require('../../../modules/Logger');
@@ -18,6 +19,7 @@ class Client {
     this.ws = null;
     this.port = null;
     this.address = null;
+    this.deviceInfoInterval = null;
   }
 
   async start({ address, port, type }) {
@@ -38,6 +40,10 @@ class Client {
         resolve();
 
         onConnection(this.ws, address, port, type);
+
+        if (type === 'master') {
+          this.initDeviceInfoInterval();
+        }
 
         processMessageBroker.subscribe(BROKER_MESSAGES_TYPES.PROXY_CLIENT_EVENT, (payload) => {
           logger.info(`sending message: ${JSON.stringify(payload)}`);
@@ -74,11 +80,32 @@ class Client {
       this.ws.on('close', () => {
         logger.warn('connection closed');
 
+        clearInterval(this.deviceInfoInterval);
+        this.deviceInfoInterval = null;
+
         ipcMain.sendCommand(IPC_COMMANDS.CONNECTION_CLOSED, { type });
 
         this.retryConnection();
       });
     });
+  }
+
+  async initDeviceInfoInterval() {
+    if (this.deviceInfoInterval) {
+      clearInterval(this.deviceInfoInterval);
+      this.deviceInfoInterval = null;
+    }
+
+    this.deviceInfoInterval = setInterval(async () => {
+      const deviceInfo = await getDeviceInfo();
+
+      sendMessage({
+        connection: this.ws,
+        clientId: config.CLIENT_ID,
+        event: MASTER_SERVER_EVENTS.DEVICE_INFO,
+        data: deviceInfo
+      });
+    }, 1000 * 15);
   }
 
   async stop() {

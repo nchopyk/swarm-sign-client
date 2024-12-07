@@ -8,10 +8,28 @@ const localStorage = require('./modules/local-storage');
 const { IPC_COMMANDS } = require('./app/constants');
 const ipcMain = require('./app/ipc-main');
 const topology = require('./topology');
-const rating = require('./rating');
 const Logger = require('./modules/Logger');
+const ratingCalculator = require('./modules/rating-calculator');
+const deviceInfoRetriever = require('./modules/device-info-retriever');
 
 const logger = new Logger().tag('INDEX', 'blue');
+
+
+setInterval(async () => {
+  const deviceInfo = await deviceInfoRetriever.getDeviceInfo();
+  const rating = ratingCalculator.calculateMasterRating({
+    Ni: deviceInfo.connectedDevices,
+    Ci: deviceInfo.cpuLoad,
+    Mifree: deviceInfo.freeRam,
+    Mimax: deviceInfo.totalRam,
+    Ui: deviceInfo.processUptime,
+    Si: deviceInfo.wifiSignal,
+    Ti: deviceInfo.networkType,
+    Umax: deviceInfo.maxUptimeAmongClients || deviceInfo.processUptime,
+  });
+
+  ipcMain.sendCommand(IPC_COMMANDS.UPDATE_MASTER_RATING, rating);
+}, 5000);
 
 
 function selectBestMaster(masters) {
@@ -49,7 +67,6 @@ const start = async () => {
     ipcMain.sendCommand(IPC_COMMANDS.UPDATE_CONNECTION_MODE, { mode: connectionMode });
 
     ipcMain.sendCommand(IPC_COMMANDS.UPDATE_MASTER_TOPOLOGY, topology);
-    ipcMain.sendCommand(IPC_COMMANDS.UPDATE_MASTER_RATING, rating);
   } else {
     const masterToConnect = selectBestMaster(masters);
     logger.info(`Selected master ${masterToConnect.id} with ${masterToConnect.connections} connections`);

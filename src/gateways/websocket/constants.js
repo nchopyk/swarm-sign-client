@@ -15,8 +15,12 @@ const ERROR_TYPES = {
   PROCESSING_FAILED: 'ERR_PROCESSING_FAILED',
 };
 
+const MASTER_SERVER_EVENTS = {
+  DEVICE_INFO: 'device_info',
+};
 
 module.exports = {
   BROKER_MESSAGES_TYPES,
   ERROR_TYPES,
+  MASTER_SERVER_EVENTS,
 };

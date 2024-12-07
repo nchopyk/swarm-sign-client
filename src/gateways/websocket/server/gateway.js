@@ -1,20 +1,25 @@
 const config = require('../../../config');
 const validationSchemas = require('../validation-schemas');
 const processMessageBroker = require('../../../modules/message-broker');
-const { WebSocketServer } = require('ws');
-const { heartbeat, initHealthCheckInterval, sendError, validate } = require('./internal.utils');
-const { BROKER_MESSAGES_TYPES, ERROR_TYPES } = require('../constants');
 const ipcMain = require('../../../app/ipc-main');
+const connectionsManager = require('./internal.connections-manager');
+const internalHandlers = require('./internal.handlers');
+const { heartbeat, initHealthCheckInterval, sendError, validate } = require('./internal.utils');
+const { WebSocketServer } = require('ws');
+const { BROKER_MESSAGES_TYPES, ERROR_TYPES, MASTER_SERVER_EVENTS } = require('../constants');
 const { IPC_COMMANDS } = require('../../../app/constants');
 const Logger = require('../../../modules/Logger');
 
 const logger = new Logger().tag('WEBSOCKET | MASTER', 'magenta');
 
+
 class WebsocketGateway {
   constructor() {
+    this.internalHandlers = {
+      [MASTER_SERVER_EVENTS.DEVICE_INFO]: internalHandlers.onDeviceInfo,
+    };
     this.incommingHandlers = {};
     this.outgoungHandlers = {};
-    this.connections = {};
     this.server = null;
     this.healthcheckInterval = null;
   }
@@ -29,7 +34,7 @@ class WebsocketGateway {
         ipcMain.sendCommand(IPC_COMMANDS.UPDATE_MASTER_WEB_SOCKET, {
           address: this.server.address().address,
           port: this.server.address().port,
-          connections: Object.keys(this.connections).length
+          connections: connectionsManager.getConnectionsCount(),
         });
 
         this.healthcheckInterval = initHealthCheckInterval(this.server);
@@ -51,14 +56,16 @@ class WebsocketGateway {
         connection.on('message', (buffer) => this._proxyEventToServer(connection, buffer));
         connection.on('pong', () => heartbeat(connection));
         connection.on('error', (err) => logger.error(err));
+
         connection.on('close', () => {
           logger.warn('connection closed');
-          if (this.connections[connection.clientId]) {
-            delete this.connections[connection.clientId];
+          if (connectionsManager.getConnection(connection.clientId)) {
+            connectionsManager.removeConnection(connection.clientId);
+
             ipcMain.sendCommand(IPC_COMMANDS.UPDATE_MASTER_WEB_SOCKET, {
               address: this.server.address().address,
               port: this.server.address().port,
-              connections: Object.keys(this.connections).length
+              connections: connectionsManager.getConnectionsCount(),
             });
           }
         });
@@ -85,20 +92,27 @@ class WebsocketGateway {
         return sendError({ connection, errorType: ERROR_TYPES.INVALID_DATA_FORMAT, message: error.message });
       }
 
-      if (!this.connections[incomingPayload.clientId]) {
-        this.connections[incomingPayload.clientId] = connection;
-        connection.clientId = incomingPayload.clientId;
+      if (!connectionsManager.getConnection(incomingPayload.clientId)) {
+        connectionsManager.addConnection(incomingPayload.clientId, connection);
+
         ipcMain.sendCommand(IPC_COMMANDS.UPDATE_MASTER_WEB_SOCKET, {
           address: this.server.address().address,
           port: this.server.address().port,
-          connections: Object.keys(this.connections).length
+          connections: connectionsManager.getConnectionsCount(),
         });
+      }
+
+      const internalHandler = this.internalHandlers[incomingPayload.event];
+
+      if (internalHandler) {
+        await internalHandler(connection, incomingPayload);
+        return;
       }
 
       const handler = this.incommingHandlers[incomingPayload.event];
 
       if (handler) {
-        const payload = await handler(connection, incomingPayload);
+        const payload = await handler.handler(incomingPayload.data);
         processMessageBroker.publish(BROKER_MESSAGES_TYPES.PROXY_CLIENT_EVENT, payload);
         return;
       }
@@ -113,7 +127,7 @@ class WebsocketGateway {
 
   async _proxyEventToClient(outgoingPayload) {
     try {
-      const connection = this.connections[outgoingPayload.clientId];
+      const connection = connectionsManager.getConnection(outgoingPayload.clientId);
 
       if (!connection) {
         return logger.error(`no connection found for clientId: ${outgoingPayload.clientId}`);
@@ -134,8 +148,7 @@ class WebsocketGateway {
   }
 
   async stop() {
-    Object.values(this.connections).forEach((connection) => connection.close());
-    this.connections = {};
+    connectionsManager.closeAllConnections();
 
     if (!this.server) {
       return;

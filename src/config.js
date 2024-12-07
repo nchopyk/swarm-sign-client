@@ -7,6 +7,9 @@ const config = {
 
   MASTER_PORT: 8001,
 
+  MASTER_MAX_CONNECTIONS: 3,
+  MASTER_MAX_NESTEDNESS: 3,
+
   CLIENT_ID: crypto.randomUUID(),
 
   WS_SERVER_ADDRESS: 'localhost',
