@@ -11,7 +11,7 @@ const logger = new Logger().tag('UDP SERVER | MASTER | MESSAGE PROCESSOR', 'yell
 class MasterUDPGateway {
   constructor() {
     this.server = null;
-    this.maxRetries = 10; // You can adjust this number as needed
+    this.maxRetries = 5; // You can adjust this number as needed
     this.currentPort = config.MASTER_PORT; // Start from the configured master port
     this.attempt = 0;
   }
@@ -44,6 +44,8 @@ class MasterUDPGateway {
 
             // Close the current server and retry
             this.server.close(() => {
+              this.server.removeAllListeners();
+
               attemptBind(this.currentPort);
             });
           } else {

@@ -9,6 +9,7 @@ const { WebSocketServer } = require('ws');
 const { BROKER_MESSAGES_TYPES, ERROR_TYPES, MASTER_SERVER_EVENTS } = require('../constants');
 const { IPC_COMMANDS } = require('../../../app/constants');
 const Logger = require('../../../modules/Logger');
+const { generateRandomNumberInRange } = require('../../../modules/helpers');
 
 const logger = new Logger().tag('WEBSOCKET | MASTER', 'magenta');
 
@@ -22,60 +23,85 @@ class WebsocketGateway {
     this.outgoungHandlers = {};
     this.server = null;
     this.healthcheckInterval = null;
+
+    // Retry logic configuration
+    this.maxRetries = 5; // maximum number of retries
+    this.attempt = 0;    // current retry attempt
+    this.currentPort = config.WS_PORT; // start from the configured WebSocket port
   }
 
   async start() {
     return new Promise((resolve, reject) => {
-      this.server = new WebSocketServer({ port: config.WS_PORT, host: config.LOCAL_ADDRESS });
+      const attemptBind = (port) => {
+        this.server = new WebSocketServer({ port, host: config.LOCAL_ADDRESS });
 
-      this.server.on('listening', () => {
-        logger.info(`server is listening on port ${config.WS_PORT}`);
+        this.server.on('listening', () => {
+          logger.info(`server is listening on port ${port}`);
 
-        ipcMain.sendCommand(IPC_COMMANDS.UPDATE_MASTER_WEB_SOCKET, {
-          address: this.server.address().address,
-          port: this.server.address().port,
-          connections: connectionsManager.getConnectionsCount(),
+          ipcMain.sendCommand(IPC_COMMANDS.UPDATE_MASTER_WEB_SOCKET, {
+            address: this.server.address().address,
+            port: this.server.address().port,
+            connections: connectionsManager.getConnectionsCount(),
+          });
+
+          this.healthcheckInterval = initHealthCheckInterval(this.server);
+          processMessageBroker.subscribe(BROKER_MESSAGES_TYPES.PROXY_SERVER_EVENT, (payload) => this._proxyEventToClient(payload));
+
+          resolve(this.server);
         });
 
-        this.healthcheckInterval = initHealthCheckInterval(this.server);
-        processMessageBroker.subscribe(BROKER_MESSAGES_TYPES.PROXY_SERVER_EVENT, (payload) => this._proxyEventToClient(payload));
+        this.server.on('error', (err) => {
+          logger.error(err);
 
-        resolve(this.server);
-      });
+          // Check if it's EADDRINUSE and we haven't exceeded max retries
+          if (err.code === 'EADDRINUSE' && this.attempt < this.maxRetries) {
+            this.attempt += 1;
+            this.currentPort = generateRandomNumberInRange(4000, 9000);
+            logger.warn(`Port ${port} is in use, retrying with port ${this.currentPort} (attempt ${this.attempt}/${this.maxRetries})`);
 
-      this.server.on('error', (err) => {
-        logger.error(err);
+            // Close current server before retrying
+            this.server.close(() => {
+              // remove all event listeners before retrying
+              this.server.removeAllListeners();
 
-        reject(err);
-      });
-
-      this.server.on('connection', (connection, req) => {
-        connection.isAlive = true;
-        logger.info(`new connection from ${req.socket.remoteAddress}`);
-
-        connection.on('message', (buffer) => this._proxyEventToServer(connection, buffer));
-        connection.on('pong', () => heartbeat(connection));
-        connection.on('error', (err) => logger.error(err));
-
-        connection.on('close', () => {
-          logger.warn('connection closed');
-          if (connectionsManager.getConnection(connection.clientId)) {
-            connectionsManager.removeConnection(connection.clientId);
-
-            ipcMain.sendCommand(IPC_COMMANDS.UPDATE_MASTER_WEB_SOCKET, {
-              address: this.server.address().address,
-              port: this.server.address().port,
-              connections: connectionsManager.getConnectionsCount(),
+              attemptBind(this.currentPort);
             });
+          } else {
+            reject(err);
           }
         });
-      });
 
-      this.server.on('close', () => {
-        clearInterval(this.healthcheckInterval);
-        this.healthcheckInterval = null;
-        ipcMain.sendCommand(IPC_COMMANDS.UPDATE_MASTER_WEB_SOCKET, { address: null, port: null, connections: 0 });
-      });
+        this.server.on('connection', (connection, req) => {
+          connection.isAlive = true;
+          logger.info(`new connection from ${req.socket.remoteAddress}`);
+
+          connection.on('message', (buffer) => this._proxyEventToServer(connection, buffer));
+          connection.on('pong', () => heartbeat(connection));
+          connection.on('error', (err) => logger.error(err));
+
+          connection.on('close', () => {
+            logger.warn('connection closed');
+            if (connectionsManager.getConnection(connection.clientId)) {
+              connectionsManager.removeConnection(connection.clientId);
+
+              ipcMain.sendCommand(IPC_COMMANDS.UPDATE_MASTER_WEB_SOCKET, {
+                address: this.server.address().address,
+                port: this.server.address().port,
+                connections: connectionsManager.getConnectionsCount(),
+              });
+            }
+          });
+        });
+
+        this.server.on('close', () => {
+          clearInterval(this.healthcheckInterval);
+          this.healthcheckInterval = null;
+          ipcMain.sendCommand(IPC_COMMANDS.UPDATE_MASTER_WEB_SOCKET, { address: null, port: null, connections: 0 });
+        });
+      };
+
+      // Initial attempt to bind
+      attemptBind(this.currentPort);
     });
   }
 
@@ -117,7 +143,7 @@ class WebsocketGateway {
         return;
       }
 
-      logger.warn(`no additional handler found for event: ${incomingPayload.event}`);
+      logger.warn(`no handler found for event: ${incomingPayload.event}`);
       processMessageBroker.publish(BROKER_MESSAGES_TYPES.PROXY_CLIENT_EVENT, incomingPayload);
     } catch (error) {
       sendError({ connection, errorType: ERROR_TYPES.INTERNAL_FAILURE, message: error.message });
