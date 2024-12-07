@@ -16,7 +16,7 @@ const logger = new Logger().tag('WEBSOCKET | MASTER', 'magenta');
 class WebsocketGateway {
   constructor() {
     this.internalHandlers = {
-      [MASTER_SERVER_EVENTS.DEVICE_INFO]: internalHandlers.onDeviceInfo,
+      [MASTER_SERVER_EVENTS.DEVICE_RATING]: internalHandlers.onClientRating
     };
     this.incommingHandlers = {};
     this.outgoungHandlers = {};

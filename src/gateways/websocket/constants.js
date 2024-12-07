@@ -16,7 +16,7 @@ const ERROR_TYPES = {
 };
 
 const MASTER_SERVER_EVENTS = {
-  DEVICE_INFO: 'device_info',
+  DEVICE_RATING: 'device_rating',
 };
 
 module.exports = {

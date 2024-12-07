@@ -3,13 +3,13 @@ const config = require('../../../config');
 const validationSchemas = require('../validation-schemas');
 const processMessageBroker = require('../../../modules/message-broker');
 const ipcMain = require('../../../app/ipc-main');
+const handlersMap = require('../../../app/websocket/handlers.map');
+const ratingCalculator = require('../../../modules/rating-calculator');
 const { validate, sendMessage } = require('./internal.utils');
-const { getDeviceInfo } = require('../../../modules/device-info-retriever');
+const { onInvalidIncomingMessage, onHandlerMissing, onConnection } = require('../../../app/websocket/handlers');
+const Logger = require('../../../modules/Logger');
 const { IPC_COMMANDS } = require('../../../app/constants');
 const { BROKER_MESSAGES_TYPES, MASTER_SERVER_EVENTS } = require('../constants');
-const { onInvalidIncomingMessage, onHandlerMissing, onConnection } = require('../../../app/websocket/handlers');
-const handlersMap = require('../../../app/websocket/handlers.map');
-const Logger = require('../../../modules/Logger');
 
 const logger = new Logger().tag('WEBSOCKET | CLIENT', 'green');
 
@@ -19,7 +19,7 @@ class Client {
     this.ws = null;
     this.port = null;
     this.address = null;
-    this.deviceInfoInterval = null;
+    this.deviceRatingInterval = null;
   }
 
   async start({ address, port, type }) {
@@ -80,8 +80,8 @@ class Client {
       this.ws.on('close', () => {
         logger.warn('connection closed');
 
-        clearInterval(this.deviceInfoInterval);
-        this.deviceInfoInterval = null;
+        clearInterval(this.deviceRatingInterval);
+        this.deviceRatingInterval = null;
 
         ipcMain.sendCommand(IPC_COMMANDS.CONNECTION_CLOSED, { type });
 
@@ -91,19 +91,19 @@ class Client {
   }
 
   async initDeviceInfoInterval() {
-    if (this.deviceInfoInterval) {
-      clearInterval(this.deviceInfoInterval);
-      this.deviceInfoInterval = null;
+    if (this.deviceRatingInterval) {
+      clearInterval(this.deviceRatingInterval);
+      this.deviceRatingInterval = null;
     }
 
-    this.deviceInfoInterval = setInterval(async () => {
-      const deviceInfo = await getDeviceInfo();
+    this.deviceRatingInterval = setInterval(async () => {
+      const deviceRatingData = await ratingCalculator.calculateCurrentDeviceRating();
 
       sendMessage({
         connection: this.ws,
         clientId: config.CLIENT_ID,
-        event: MASTER_SERVER_EVENTS.DEVICE_INFO,
-        data: deviceInfo
+        event: MASTER_SERVER_EVENTS.DEVICE_RATING,
+        data: deviceRatingData
       });
     }, 1000 * 15);
   }

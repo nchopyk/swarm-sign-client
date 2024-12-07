@@ -3,14 +3,15 @@ const logger = new Logger().tag('WEBSOCKET | MASTER', 'magenta');
 const connectionsManager = require('./internal.connections-manager');
 
 
-const onDeviceInfo = async (ws, incomingMessage) => {
-  const { device } = incomingMessage.data;
+const onClientRating = async (ws, incomingMessage) => {
+  const ratingData = incomingMessage.data;
 
-  logger.info(`received device rating info: ${JSON.stringify(device)}`);
+  logger.info(`received device rating info: ${JSON.stringify(ratingData)}`);
 
-  connectionsManager.updateDeviceInfo(ws, device);
+  connectionsManager.updateClientRatingData(ws, ratingData);
+
 };
 
 module.exports = {
-  onDeviceInfo,
+  onClientRating,
 };

@@ -10,23 +10,11 @@ const ipcMain = require('./app/ipc-main');
 const topology = require('./topology');
 const Logger = require('./modules/Logger');
 const ratingCalculator = require('./modules/rating-calculator');
-const deviceInfoRetriever = require('./modules/device-info-retriever');
 
 const logger = new Logger().tag('INDEX', 'blue');
 
-
 setInterval(async () => {
-  const deviceInfo = await deviceInfoRetriever.getDeviceInfo();
-  const rating = ratingCalculator.calculateMasterRating({
-    Ni: deviceInfo.connectedDevices,
-    Ci: deviceInfo.cpuLoad,
-    Mifree: deviceInfo.freeRam,
-    Mimax: deviceInfo.totalRam,
-    Ui: deviceInfo.processUptime,
-    Si: deviceInfo.wifiSignal,
-    Ti: deviceInfo.networkType,
-    Umax: deviceInfo.maxUptimeAmongClients || deviceInfo.processUptime,
-  });
+  const rating = await ratingCalculator.calculateCurrentDeviceRating();
 
   ipcMain.sendCommand(IPC_COMMANDS.UPDATE_MASTER_RATING, rating);
 }, 5000);
