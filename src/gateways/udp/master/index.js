@@ -4,52 +4,68 @@ const messagesProcessor = require('./messages-processor');
 const { IPC_COMMANDS } = require('../../../app/constants');
 const ipcMain = require('../../../app/ipc-main');
 const Logger = require('../../../modules/Logger');
+const { generateRandomNumberInRange } = require('../../../modules/helpers');
 
 const logger = new Logger().tag('UDP SERVER | MASTER | MESSAGE PROCESSOR', 'yellow');
 
 class MasterUDPGateway {
   constructor() {
     this.server = null;
+    this.maxRetries = 10; // You can adjust this number as needed
+    this.currentPort = config.MASTER_PORT; // Start from the configured master port
+    this.attempt = 0;
   }
 
   async start() {
-    this.server = dgram.createSocket('udp4');
-
-    this.server.on('message', async (data, rinfo) => {
-      try {
-        const message = JSON.parse(data.toString());
-        const sender = { address: rinfo.address, port: rinfo.port };
-
-        logger.info(`incoming message from ${sender.address}:${sender.port}: ${data.toString()}`);
-
-        await messagesProcessor.process(this.server, sender, message);
-      } catch (error) {
-        logger.error(error);
-      }
-    });
-
-    this.server.on('error', (err) => {
-      logger.error(err);
-      this.server.close();
-    });
-
     return new Promise((resolve, reject) => {
-      this.server.on('error', (err) => {
-        reject(err);
-      });
+      const attemptBind = (port) => {
+        this.server = dgram.createSocket('udp4');
 
-      this.server.on('listening', () => {
-        this.server.setBroadcast(true);
+        this.server.on('message', async (data, rinfo) => {
+          try {
+            const message = JSON.parse(data.toString());
+            const sender = { address: rinfo.address, port: rinfo.port };
 
-        const address = this.server.address();
+            logger.info(`incoming message from ${sender.address}:${sender.port}: ${data.toString()}`);
+            await messagesProcessor.process(this.server, sender, message);
+          } catch (error) {
+            logger.error(error);
+          }
+        });
 
-        ipcMain.sendCommand(IPC_COMMANDS.UPDATE_MASTER_GATEWAY, { address: this.server.address().address, port: this.server.address().port });
+        this.server.on('error', (err) => {
+          logger.error(err);
 
-        logger.info(`server listening ${address.address}:${address.port}`);
-        resolve(this.server);
-      });
+          // If the address is in use and we have retries left, increment the port and try again.
+          if (err.code === 'EADDRINUSE' && this.attempt < this.maxRetries) {
+            this.attempt += 1;
+            this.currentPort = generateRandomNumberInRange(4000, 9000);
+            logger.warn(`Port ${port} is in use, retrying with port ${this.currentPort} (attempt ${this.attempt}/${this.maxRetries})`);
 
-      this.server.bind(config.MASTER_PORT, config.LOCAL_ADDRESS);
+            // Close the current server and retry
+            this.server.close(() => {
+              attemptBind(this.currentPort);
+            });
+          } else {
+            // If no more retries or error is of different nature, reject
+            reject(err);
+          }
+        });
+
+        this.server.on('listening', () => {
+          this.server.setBroadcast(true);
+
+          const address = this.server.address();
+          ipcMain.sendCommand(IPC_COMMANDS.UPDATE_MASTER_GATEWAY, { address: address.address, port: address.port });
+
+          logger.info(`server listening ${address.address}:${address.port}`);
+          resolve(this.server);
+        });
+
+        this.server.bind(port, config.LOCAL_ADDRESS);
+      };
+
+      attemptBind(this.currentPort);
     });
   }
 
