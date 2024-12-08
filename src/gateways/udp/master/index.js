@@ -54,15 +54,21 @@ class MasterUDPGateway {
           }
         });
 
+        this.server.on('close', () => {
+          logger.info('server closed');
+          config.MASTER_PORT = null;
+        });
+
         this.server.on('listening', () => {
           this.server.setBroadcast(true);
 
-          config.MASTER_PORT = this.server.address().port;
 
           const address = this.server.address();
           ipcMain.sendCommand(IPC_COMMANDS.UPDATE_MASTER_GATEWAY, { address: address.address, port: address.port });
 
           logger.info(`server listening ${address.address}:${address.port}`);
+
+          config.MASTER_PORT = address.port;
           resolve(this.server);
         });
 

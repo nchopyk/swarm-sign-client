@@ -21,7 +21,7 @@ class Client {
     this.ws = null;
     this.port = null;
     this.address = null;
-    this.slaveInfoInterval = null;
+    this.slaveInfoTimeout = null;
     this.internalHandlers = {
       [SLAVE_CLIENT_EVENTS.START_MASTER_UDP]: internalHandlers.onStartMasterUPD,
       [SLAVE_CLIENT_EVENTS.STOP_MASTER_UDP]: internalHandlers.onStopMasterUPD,
@@ -95,8 +95,8 @@ class Client {
       this.ws.on('close', () => {
         logger.warn('connection closed');
 
-        clearInterval(this.slaveInfoInterval);
-        this.slaveInfoInterval = null;
+        clearTimeout(this.slaveInfoTimeout);
+        this.slaveInfoTimeout = null;
 
         ipcMain.sendCommand(IPC_COMMANDS.CONNECTION_CLOSED, { type });
 
@@ -106,22 +106,17 @@ class Client {
   }
 
   async initDeviceInfoInterval() {
-    if (this.slaveInfoInterval) {
-      clearInterval(this.slaveInfoInterval);
-      this.slaveInfoInterval = null;
-    }
+    sendMessage({
+      connection: this.ws,
+      clientId: config.CLIENT_ID,
+      event: MASTER_SERVER_EVENTS.SLAVE_INFO,
+      data: {
+        ratingData: state.ratingData,
+        topology: getCurrentTopology(),
+      }
+    });
 
-    this.slaveInfoInterval = setInterval(async () => {
-      sendMessage({
-        connection: this.ws,
-        clientId: config.CLIENT_ID,
-        event: MASTER_SERVER_EVENTS.SLAVE_INFO,
-        data: {
-          ratingData: state.ratingData,
-          topology: getCurrentTopology(),
-        }
-      });
-    }, 1000 * 5);
+    this.slaveInfoTimeout = setTimeout(() => this.initDeviceInfoInterval(), 5000);
   }
 
   async stop() {

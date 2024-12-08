@@ -30,7 +30,7 @@ Example of a topology object:
 
 const websocketConnectionsManager = require('../gateways/websocket/server/internal.connections-manager');
 const state = require('../state');
-const { LOCAL_ADDRESS, WS_PORT } = require('../config');
+const config = require('../config');
 
 const getCurrentTopology = () => {
   if (!state.ratingData) {
@@ -38,8 +38,9 @@ const getCurrentTopology = () => {
   }
 
   const topology = {
-    ip: LOCAL_ADDRESS,
-    port: WS_PORT,
+    ip: config.LOCAL_ADDRESS,
+    port: config.WS_PORT,
+    clientId: config.CLIENT_ID,
     rating: state.ratingData.rating,
     connectedClients: []
   };
@@ -53,10 +54,12 @@ const getCurrentTopology = () => {
       {
         ip: connection.address, // connection._socket.remoteAddress
         port: connection.topology.port,
+        clientId,
         rating: connection.ratingData.rating,
         connectedClients: connection.topology.connectedClients
       } : {
         ip: connection.address,
+        clientId,
         port: null,
         rating: null,
         connectedClients: []

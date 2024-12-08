@@ -132,7 +132,7 @@ class SlaveUDPGateway {
 
     const msg = Buffer.from(JSON.stringify(message));
 
-    this.server.send(msg, 0, msg.length, config.MASTER_PORT, config.BROADCAST_ADDRESS, (err) => {
+    this.server.send(msg, 0, msg.length, 8001, config.BROADCAST_ADDRESS, (err) => {
       if (err) {
         logger.error(err);
         return;

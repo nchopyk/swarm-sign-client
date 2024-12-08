@@ -55,12 +55,13 @@ class WatchdogService {
 
   tag(tag, color, background) {
     const style = styled(color, background);
+    const errorStyle = styled('red');
 
     return {
       log: (...args) => this.log(style(`[${tag}]`), ...args.map((arg) => style(arg))),
       info: (...args) => this.info(style(`[${tag}]`), ...args.map((arg) => style(arg))),
       warn: (...args) => this.warn(style(`[${tag}]`), ...args.map((arg) => style(arg))),
-      error: (...args) => this.error(style(`[${tag}]`), ...args.map((arg) => style(arg))),
+      error: (...args) => this.error(errorStyle(`[${tag}]`), ...args.map((arg) => errorStyle(arg))),
       debug: (...args) => this.debug(style(`[${tag}]`), ...args.map((arg) => style(arg))),
     };
   }
