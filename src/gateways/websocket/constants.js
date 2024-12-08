@@ -16,11 +16,15 @@ const ERROR_TYPES = {
 };
 
 const MASTER_SERVER_EVENTS = {
-  DEVICE_RATING: 'device_rating',
+  SLAVE_INFO: 'slave_info',
 };
 
 const SLAVE_CLIENT_EVENTS = {
-  START_MASTER: 'start_master',
+  START_MASTER_UDP: 'start_master_udp',
+  STOP_MASTER_UDP: 'stop_master_udp',
+
+  START_MASTER_WS: 'start_master_ws',
+  STOP_MASTER_WS: 'stop_master_ws',
 };
 
 module.exports = {

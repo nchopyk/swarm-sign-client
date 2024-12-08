@@ -10,6 +10,7 @@ const { BROKER_MESSAGES_TYPES, ERROR_TYPES, MASTER_SERVER_EVENTS } = require('..
 const { IPC_COMMANDS } = require('../../../app/constants');
 const Logger = require('../../../modules/Logger');
 const { generateRandomNumberInRange } = require('../../../modules/helpers');
+const topologyBuilder = require('../../../modules/topology-builder');
 
 const logger = new Logger().tag('WEBSOCKET | MASTER', 'magenta');
 
@@ -17,7 +18,7 @@ const logger = new Logger().tag('WEBSOCKET | MASTER', 'magenta');
 class WebsocketGateway {
   constructor() {
     this.internalHandlers = {
-      [MASTER_SERVER_EVENTS.DEVICE_RATING]: internalHandlers.onClientRating
+      [MASTER_SERVER_EVENTS.SLAVE_INFO]: internalHandlers.onSlaveInfo
     };
     this.incommingHandlers = {};
     this.outgoungHandlers = {};
@@ -27,7 +28,7 @@ class WebsocketGateway {
     // Retry logic configuration
     this.maxRetries = 5; // maximum number of retries
     this.attempt = 0;    // current retry attempt
-    this.currentPort = config.WS_PORT; // start from the configured WebSocket port
+    this.currentPort = 8002; // start from the configured WebSocket port
   }
 
   async start() {
@@ -44,8 +45,12 @@ class WebsocketGateway {
             connections: connectionsManager.getConnectionsCount(),
           });
 
+          config.WS_PORT = this.server.address().port;
+
           this.healthcheckInterval = initHealthCheckInterval(this.server);
           processMessageBroker.subscribe(BROKER_MESSAGES_TYPES.PROXY_SERVER_EVENT, (payload) => this._proxyEventToClient(payload));
+
+          ipcMain.sendCommand(IPC_COMMANDS.UPDATE_MASTER_TOPOLOGY, topologyBuilder.getCurrentTopology());
 
           resolve(this.server);
         });
@@ -89,6 +94,8 @@ class WebsocketGateway {
                 port: this.server.address().port,
                 connections: connectionsManager.getConnectionsCount(),
               });
+
+              ipcMain.sendCommand(IPC_COMMANDS.UPDATE_MASTER_TOPOLOGY, topologyBuilder.getCurrentTopology());
             }
           });
         });
@@ -96,12 +103,38 @@ class WebsocketGateway {
         this.server.on('close', () => {
           clearInterval(this.healthcheckInterval);
           this.healthcheckInterval = null;
+          config.WS_PORT = null;
           ipcMain.sendCommand(IPC_COMMANDS.UPDATE_MASTER_WEB_SOCKET, { address: null, port: null, connections: 0 });
+          ipcMain.sendCommand(IPC_COMMANDS.UPDATE_MASTER_TOPOLOGY, topologyBuilder.getCurrentTopology());
         });
       };
 
       // Initial attempt to bind
       attemptBind(this.currentPort);
+    });
+  }
+
+  async stop() {
+    connectionsManager.closeAllConnections();
+
+    if (!this.server) {
+      return;
+    }
+
+    return new Promise((resolve, reject) => {
+      this.server.close((err) => {
+        if (err) {
+          reject(err);
+          return;
+        }
+
+        clearInterval(this.healthcheckInterval);
+
+        this.server = null;
+        this.healthcheckInterval = null;
+
+        resolve();
+      });
     });
   }
 
@@ -126,6 +159,8 @@ class WebsocketGateway {
           port: this.server.address().port,
           connections: connectionsManager.getConnectionsCount(),
         });
+
+        ipcMain.sendCommand(IPC_COMMANDS.UPDATE_MASTER_TOPOLOGY, topologyBuilder.getCurrentTopology());
       }
 
       const internalHandler = this.internalHandlers[incomingPayload.event];
@@ -173,28 +208,14 @@ class WebsocketGateway {
     }
   }
 
-  async stop() {
-    connectionsManager.closeAllConnections();
-
+  getServerAddress() {
     if (!this.server) {
-      return;
+      return null;
     }
 
-    return new Promise((resolve, reject) => {
-      this.server.close((err) => {
-        if (err) {
-          reject(err);
-          return;
-        }
+    const { address, port } = this.server.address();
 
-        clearInterval(this.healthcheckInterval);
-
-        this.server = null;
-        this.healthcheckInterval = null;
-
-        resolve();
-      });
-    });
+    return { address, port };
   }
 }
 

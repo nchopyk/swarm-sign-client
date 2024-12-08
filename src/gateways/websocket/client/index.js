@@ -5,9 +5,10 @@ const processMessageBroker = require('../../../modules/message-broker');
 const ipcMain = require('../../../app/ipc-main');
 const handlersMap = require('../../../app/websocket/handlers.map');
 const internalHandlers = require('./internal.handlers');
-const ratingCalculator = require('../../../modules/rating-calculator');
+const state = require('../../../state');
 const { validate, sendMessage } = require('./internal.utils');
 const { onInvalidIncomingMessage, onHandlerMissing, onConnection } = require('../../../app/websocket/handlers');
+const { getCurrentTopology } = require('../../../modules/topology-builder');
 const Logger = require('../../../modules/Logger');
 const { IPC_COMMANDS } = require('../../../app/constants');
 const { BROKER_MESSAGES_TYPES, MASTER_SERVER_EVENTS, SLAVE_CLIENT_EVENTS } = require('../constants');
@@ -20,9 +21,12 @@ class Client {
     this.ws = null;
     this.port = null;
     this.address = null;
-    this.deviceRatingInterval = null;
+    this.slaveInfoInterval = null;
     this.internalHandlers = {
-      [SLAVE_CLIENT_EVENTS.START_MASTER]: internalHandlers.onMasterStart,
+      [SLAVE_CLIENT_EVENTS.START_MASTER_UDP]: internalHandlers.onStartMasterUPD,
+      [SLAVE_CLIENT_EVENTS.STOP_MASTER_UDP]: internalHandlers.onStopMasterUPD,
+      [SLAVE_CLIENT_EVENTS.START_MASTER_WS]: internalHandlers.onStartMasterWS,
+      [SLAVE_CLIENT_EVENTS.STOP_MASTER_WS]: internalHandlers.onStopMasterWS,
     };
   }
 
@@ -91,8 +95,8 @@ class Client {
       this.ws.on('close', () => {
         logger.warn('connection closed');
 
-        clearInterval(this.deviceRatingInterval);
-        this.deviceRatingInterval = null;
+        clearInterval(this.slaveInfoInterval);
+        this.slaveInfoInterval = null;
 
         ipcMain.sendCommand(IPC_COMMANDS.CONNECTION_CLOSED, { type });
 
@@ -102,21 +106,22 @@ class Client {
   }
 
   async initDeviceInfoInterval() {
-    if (this.deviceRatingInterval) {
-      clearInterval(this.deviceRatingInterval);
-      this.deviceRatingInterval = null;
+    if (this.slaveInfoInterval) {
+      clearInterval(this.slaveInfoInterval);
+      this.slaveInfoInterval = null;
     }
 
-    this.deviceRatingInterval = setInterval(async () => {
-      const deviceRatingData = await ratingCalculator.calculateCurrentDeviceRating();
-
+    this.slaveInfoInterval = setInterval(async () => {
       sendMessage({
         connection: this.ws,
         clientId: config.CLIENT_ID,
-        event: MASTER_SERVER_EVENTS.DEVICE_RATING,
-        data: deviceRatingData
+        event: MASTER_SERVER_EVENTS.SLAVE_INFO,
+        data: {
+          ratingData: state.ratingData,
+          topology: getCurrentTopology(),
+        }
       });
-    }, 1000 * 15);
+    }, 1000 * 5);
   }
 
   async stop() {

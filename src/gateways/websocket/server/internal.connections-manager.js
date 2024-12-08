@@ -4,9 +4,13 @@ class ConnectionsManager {
   }
 
   addConnection(clientId, connection) {
-    connection.rating = null;
-    connection.device = null;
     connection.clientId = clientId;
+
+    connection.ratingData = null;
+    connection.topology = null;
+
+    connection.address = connection._socket.remoteAddress;
+    connection.port = connection._socket.remotePort;
 
     this.connections[clientId] = connection;
   }
@@ -36,7 +40,11 @@ class ConnectionsManager {
   }
 
   updateClientRatingData(clientId, ratingData) {
-    this.connections[clientId].rating = ratingData;
+    this.connections[clientId].ratingData = ratingData;
+  }
+
+  updateClientTopology(clientId, topology) {
+    this.connections[clientId].topology = topology;
   }
 }
 

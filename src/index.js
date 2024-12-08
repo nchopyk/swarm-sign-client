@@ -7,7 +7,6 @@ const websocketClient = require('./gateways/websocket/client');
 const localStorage = require('./modules/local-storage');
 const { IPC_COMMANDS } = require('./app/constants');
 const ipcMain = require('./app/ipc-main');
-const topology = require('./topology');
 const Logger = require('./modules/Logger');
 
 const logger = new Logger().tag('INDEX', 'blue');
@@ -47,7 +46,6 @@ const start = async () => {
     connectionMode = 'direct';
     ipcMain.sendCommand(IPC_COMMANDS.UPDATE_CONNECTION_MODE, { mode: connectionMode });
 
-    ipcMain.sendCommand(IPC_COMMANDS.UPDATE_MASTER_TOPOLOGY, topology);
   } else {
     const masterToConnect = selectBestMaster(masters);
     logger.info(`Selected master ${masterToConnect.id} with ${masterToConnect.connections} connections`);

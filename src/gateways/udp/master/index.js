@@ -12,7 +12,7 @@ class MasterUDPGateway {
   constructor() {
     this.server = null;
     this.maxRetries = 5; // You can adjust this number as needed
-    this.currentPort = config.MASTER_PORT; // Start from the configured master port
+    this.currentPort = 8001; // Start from the configured master port
     this.attempt = 0;
   }
 
@@ -56,6 +56,8 @@ class MasterUDPGateway {
 
         this.server.on('listening', () => {
           this.server.setBroadcast(true);
+
+          config.MASTER_PORT = this.server.address().port;
 
           const address = this.server.address();
           ipcMain.sendCommand(IPC_COMMANDS.UPDATE_MASTER_GATEWAY, { address: address.address, port: address.port });

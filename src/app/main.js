@@ -4,12 +4,15 @@ const ipcMain = require('./ipc-main');
 const connectionClient = require('../index');
 const ratingCalculator = require('../modules/rating-calculator');
 const { IPC_COMMANDS } = require('./constants');
+const state = require('../state');
 
 const deviceRatingInterval = setInterval(async () => {
   try {
-    const rating = await ratingCalculator.calculateCurrentDeviceRating();
+    const ratingData = await ratingCalculator.calculateCurrentDeviceRating();
 
-    ipcMain.sendCommand(IPC_COMMANDS.UPDATE_MASTER_RATING, rating);
+    state.ratingData = ratingData;
+
+    ipcMain.sendCommand(IPC_COMMANDS.UPDATE_MASTER_RATING, ratingData);
   } catch (error) {
     console.error(error);
   }

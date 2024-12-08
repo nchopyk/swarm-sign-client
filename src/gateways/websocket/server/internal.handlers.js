@@ -1,28 +1,22 @@
 const Logger = require('../../../modules/Logger');
 const logger = new Logger().tag('WEBSOCKET | MASTER', 'magenta');
 const connectionsManager = require('./internal.connections-manager');
-const { sendMessage } = require('../client/internal.utils');
-const { SLAVE_CLIENT_EVENTS } = require('../constants');
+const ipcMain = require('../../../app/ipc-main');
+const { IPC_COMMANDS } = require('../../../app/constants');
+const topologyBuilder = require('../../../modules/topology-builder');
 
 
-const onClientRating = async (ws, incomingMessage) => {
-  const ratingData = incomingMessage.data;
+const onSlaveInfo = async (ws, incomingMessage) => {
+  const { ratingData, topology } = incomingMessage.data;
 
-  logger.info(`received device rating info: ${JSON.stringify(ratingData)}`);
+  logger.info(`received slave info from ${incomingMessage.clientId}: ${JSON.stringify(incomingMessage.data)}`);
 
   connectionsManager.updateClientRatingData(incomingMessage.clientId, ratingData);
+  connectionsManager.updateClientTopology(incomingMessage.clientId, topology);
 
-  if (ratingData.connectedDevices !== undefined) {
-    logger.info(`received connected devices info: ${ratingData.connectedDevices}`);
-    sendMessage({
-      connection: ws,
-      clientId: incomingMessage.clientId,
-      event: SLAVE_CLIENT_EVENTS.START_MASTER,
-      data: null
-    });
-  }
+  ipcMain.sendCommand(IPC_COMMANDS.UPDATE_MASTER_TOPOLOGY, topologyBuilder.getCurrentTopology());
 };
 
 module.exports = {
-  onClientRating,
+  onSlaveInfo,
 };
