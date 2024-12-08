@@ -96,6 +96,8 @@ class WebsocketGateway {
               });
 
               ipcMain.sendCommand(IPC_COMMANDS.UPDATE_MASTER_TOPOLOGY, topologyBuilder.getCurrentTopology());
+
+              internalHandlers.controlSwarm();
             }
           });
         });
