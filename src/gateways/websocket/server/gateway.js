@@ -4,6 +4,7 @@ const processMessageBroker = require('../../../modules/message-broker');
 const ipcMain = require('../../../app/ipc-main');
 const connectionsManager = require('./internal.connections-manager');
 const internalHandlers = require('./internal.handlers');
+const swarmController = require('./internal.swarm-controller');
 const { heartbeat, initHealthCheckInterval, sendError, validate } = require('./internal.utils');
 const { WebSocketServer } = require('ws');
 const { BROKER_MESSAGES_TYPES, ERROR_TYPES, MASTER_SERVER_EVENTS } = require('../constants');
@@ -84,7 +85,7 @@ class WebsocketGateway {
           connection.on('pong', () => heartbeat(connection));
           connection.on('error', (err) => logger.error(err));
 
-          connection.on('close', () => {
+          connection.on('close', async () => {
             logger.warn('connection closed');
             if (connectionsManager.getConnection(connection.clientId)) {
               connectionsManager.removeConnection(connection.clientId);
@@ -97,7 +98,7 @@ class WebsocketGateway {
 
               ipcMain.sendCommand(IPC_COMMANDS.UPDATE_MASTER_TOPOLOGY, topologyBuilder.getCurrentTopology());
 
-              internalHandlers.controlSwarm();
+              await swarmController.control();
             }
           });
         });
@@ -153,7 +154,7 @@ class WebsocketGateway {
         return sendError({ connection, errorType: ERROR_TYPES.INVALID_DATA_FORMAT, message: error.message });
       }
 
-      if (!connectionsManager.getConnection(incomingPayload.clientId)) {
+      if (!connection.clientId && !connectionsManager.getConnection(incomingPayload.clientId)) {
         connectionsManager.addConnection(incomingPayload.clientId, connection);
 
         ipcMain.sendCommand(IPC_COMMANDS.UPDATE_MASTER_WEB_SOCKET, {

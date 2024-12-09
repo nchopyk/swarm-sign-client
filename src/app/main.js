@@ -3,16 +3,21 @@ const path = require('node:path');
 const ipcMain = require('./ipc-main');
 const connectionClient = require('../index');
 const ratingCalculator = require('../modules/rating-calculator');
+const topologyBuilder = require('../modules/topology-builder');
 const { IPC_COMMANDS } = require('./constants');
 const state = require('../state');
 
 const deviceRatingInterval = setInterval(async () => {
   try {
     const ratingData = await ratingCalculator.calculateCurrentDeviceRating();
+    const topology = topologyBuilder.getCurrentTopology();
 
     state.ratingData = ratingData;
 
+    console.log(topology);
+
     ipcMain.sendCommand(IPC_COMMANDS.UPDATE_MASTER_RATING, ratingData);
+    ipcMain.sendCommand(IPC_COMMANDS.UPDATE_MASTER_TOPOLOGY, topology);
   } catch (error) {
     console.error(error);
   }

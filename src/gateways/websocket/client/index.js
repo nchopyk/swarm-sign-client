@@ -43,11 +43,11 @@ class Client {
         reject(error);
       });
 
-      this.ws.on('open', () => {
+      this.ws.on('open', async () => {
         logger.info('connected to server');
         resolve();
 
-        onConnection(this.ws, address, port, type);
+        await onConnection(this.ws, address, port, type);
 
         if (type === 'master') {
           this.initDeviceInfoInterval();
@@ -105,7 +105,7 @@ class Client {
     });
   }
 
-  async initDeviceInfoInterval() {
+  initDeviceInfoInterval() {
     sendMessage({
       connection: this.ws,
       clientId: config.CLIENT_ID,
