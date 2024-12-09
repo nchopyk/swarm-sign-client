@@ -22,6 +22,7 @@ class Client {
     this.port = null;
     this.address = null;
     this.slaveInfoTimeout = null;
+    this.retryAttempts = 0;
     this.internalHandlers = {
       [SLAVE_CLIENT_EVENTS.START_MASTER_UDP]: internalHandlers.onStartMasterUPD,
       [SLAVE_CLIENT_EVENTS.STOP_MASTER_UDP]: internalHandlers.onStopMasterUPD,
@@ -45,6 +46,8 @@ class Client {
 
       this.ws.on('open', async () => {
         logger.info('connected to server');
+        this.retryAttempts = 0;
+
         resolve();
 
         await onConnection(this.ws, address, port, type);
@@ -131,6 +134,13 @@ class Client {
   async retryConnection() {
     if (!this.address || !this.port) {
       throw new Error('address and port must be set before restarting');
+    }
+
+    this.retryAttempts += 1;
+
+    if (this.retryAttempts > 3) {
+      processMessageBroker.publish('RESTART');
+      return;
     }
 
     setTimeout(() => {

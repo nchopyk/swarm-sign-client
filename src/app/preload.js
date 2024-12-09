@@ -16,4 +16,5 @@ contextBridge.exposeInMainWorld('IPC', {
   onResetData: (callback) => ipcRenderer.on(IPC_COMMANDS.RESET_DATA, (_event, data) => callback(data)),
   onMasterTopologyUpdate: (callback) => ipcRenderer.on(IPC_COMMANDS.UPDATE_MASTER_TOPOLOGY, (_event, data) => callback(data)),
   onMasterRatingUpdate: (callback) => ipcRenderer.on(IPC_COMMANDS.UPDATE_MASTER_RATING, (_event, data) => callback(data)),
+  onInitServerSearch: (callback) => ipcRenderer.on(IPC_COMMANDS.INIT_SERVER_SEARCH, (_event, data) => callback(data)),
 });

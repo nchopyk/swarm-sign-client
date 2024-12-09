@@ -8,6 +8,7 @@ const localStorage = require('./modules/local-storage');
 const { IPC_COMMANDS } = require('./app/constants');
 const ipcMain = require('./app/ipc-main');
 const Logger = require('./modules/Logger');
+const messageBroker = require('./modules/message-broker');
 
 const logger = new Logger().tag('INDEX', 'blue');
 
@@ -19,6 +20,8 @@ function selectBestMaster(masters) {
 const start = async () => {
   logger.info(`Starting application${process.env.INSTANCE_ID ? ` instance #${process.env.INSTANCE_ID}` : ''}`);
   await localStorage.init();
+
+  ipcMain.sendCommand(IPC_COMMANDS.INIT_SERVER_SEARCH);
 
   let connectionMode = 'proxy';
 
@@ -63,6 +66,13 @@ const stop = async () => {
   await websocketGateway.stop();
   await websocketClient.stop();
 };
+
+
+messageBroker.subscribe('RESTART', async () => {
+  logger.info('Restarting application');
+  await stop();
+  await start();
+});
 
 
 module.exports = {

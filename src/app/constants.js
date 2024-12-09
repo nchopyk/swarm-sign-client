@@ -13,6 +13,7 @@ const IPC_COMMANDS = {
   RESET_DATA: 'reset-data',
   UPDATE_MASTER_TOPOLOGY: 'update-master-topology',
   UPDATE_MASTER_RATING: 'update-master-rating',
+  INIT_SERVER_SEARCH: 'init-server-search',
 };
 
 const ERROR_TYPES = {
