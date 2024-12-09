@@ -46,6 +46,20 @@ class ConnectionsManager {
   updateClientTopology(clientId, topology) {
     this.connections[clientId].topology = topology;
   }
+
+  broadcastMessage(message) {
+    for (const clientId in this.connections) {
+      this.connections[clientId].send(message);
+    }
+  }
+
+  broadcastMessageBetweenMasters(message) {
+    for (const clientId in this.connections) {
+      if (this.connections[clientId].topology.port) {
+        this.connections[clientId].send(message);
+      }
+    }
+  }
 }
 
 

@@ -194,14 +194,8 @@ class WebsocketGateway {
       const connection = connectionsManager.getConnection(outgoingPayload.clientId);
 
       if (!connection) {
-        return logger.error(`no connection found for clientId: ${outgoingPayload.clientId}`);
-      }
-
-      const handler = this.outgoungHandlers[outgoingPayload.event];
-
-      if (handler) {
-        const payload = await handler(connection, outgoingPayload);
-        connection.send(JSON.stringify(payload));
+        logger.error(`no connection found for clientId: ${outgoingPayload.clientId}, sending between all masters`);
+        connectionsManager.broadcastMessageBetweenMasters(JSON.stringify(outgoingPayload));
         return;
       }
 
