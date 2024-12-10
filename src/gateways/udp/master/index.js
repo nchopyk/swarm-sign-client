@@ -4,7 +4,7 @@ const messagesProcessor = require('./messages-processor');
 const { IPC_COMMANDS } = require('../../../app/constants');
 const ipcMain = require('../../../app/ipc-main');
 const Logger = require('../../../modules/Logger');
-const { generateRandomNumberInRange } = require('../../../modules/helpers');
+
 
 const logger = new Logger().tag('UDP SERVER | MASTER | MESSAGE PROCESSOR', 'yellow');
 
@@ -39,7 +39,7 @@ class MasterUDPGateway {
           // If the address is in use and we have retries left, increment the port and try again.
           if (err.code === 'EADDRINUSE' && this.attempt < this.maxRetries) {
             this.attempt += 1;
-            this.currentPort = generateRandomNumberInRange(4000, 9000);
+            this.currentPort += 1;
             logger.warn(`Port ${port} is in use, retrying with port ${this.currentPort} (attempt ${this.attempt}/${this.maxRetries})`);
 
             // Close the current server and retry

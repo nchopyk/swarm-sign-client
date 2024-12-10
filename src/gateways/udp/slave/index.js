@@ -13,6 +13,12 @@ const logger = new Logger().tag('UDP SERVER | SLAVE', 'yellow');
 class SlaveUDPGateway {
   constructor() {
     this.server = dgram.createSocket('udp4');
+  }
+
+  async start() {
+    if (!this.server) {
+      this.server = dgram.createSocket('udp4');
+    }
 
     this.server.on('error', (err) => {
       logger.error(err);
@@ -32,12 +38,6 @@ class SlaveUDPGateway {
         logger.error(error);
       }
     });
-  }
-
-  async start() {
-    if (!this.server) {
-      this.server = dgram.createSocket('udp4');
-    }
 
     return new Promise((resolve, reject) => {
       this.server.on('error', (err) => {
@@ -60,9 +60,12 @@ class SlaveUDPGateway {
 
   async stop() {
     return new Promise((resolve, reject) => {
+      this.server.removeAllListeners();
+
       this.server.close((err) => {
         if (err) {
           reject(err);
+          this.server = null;
           return;
         }
 
@@ -134,14 +137,20 @@ class SlaveUDPGateway {
 
     const msg = Buffer.from(JSON.stringify(message));
 
-    this.server.send(msg, 0, msg.length, 8001, config.BROADCAST_ADDRESS, (err) => {
-      if (err) {
-        logger.error(err);
-        return;
-      }
+    const masterPortRange = { min: 8000, max: 8100 };
 
-      logger.info(`sent broadcast message: ${JSON.stringify(message)}`);
-    });
+    for (let i = masterPortRange.min; i <= masterPortRange.max; i++) {
+      this.server.send(msg, 0, msg.length, i, config.BROADCAST_ADDRESS, (err) => {
+        if (err) {
+          logger.error(err);
+          return;
+        }
+
+        // logger.info(`sent broadcast message: ${JSON.stringify(message)}`);
+      });
+    }
+
+    logger.info(`sent broadcast message: ${JSON.stringify(message)}`);
   }
 
   sendUnicastMessage(message, masterServer) {

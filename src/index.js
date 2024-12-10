@@ -14,7 +14,7 @@ const logger = new Logger().tag('INDEX', 'blue');
 
 
 function selectBestMaster(masters) {
-  return masters.filter((master) => !!master.rating).sort((a, b) => a.rating - b.rating)[0];
+  return masters.filter((master) => !!master.rating).sort((a, b) => b.rating - a.rating)[0];
 }
 
 const start = async () => {
@@ -31,9 +31,7 @@ const start = async () => {
   await slaveGateway.start();
 
 
-  const masters = await slaveGateway.scanForMasters(helpers.generateRandomNumberInRange(600, 5000));
-
-  console.log(masters);
+  const masters = await slaveGateway.scanForMasters(helpers.generateRandomNumberInRange(2000, 6000));
 
   let serverConnectionParams = {
     type: 'server',
