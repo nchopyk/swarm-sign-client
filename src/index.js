@@ -14,7 +14,7 @@ const logger = new Logger().tag('INDEX', 'blue');
 
 
 function selectBestMaster(masters) {
-  return masters.sort((a, b) => a.connections - b.connections)[0];
+  return masters.filter((master) => !!master.rating).sort((a, b) => a.rating - b.rating)[0];
 }
 
 const start = async () => {
@@ -32,6 +32,8 @@ const start = async () => {
 
 
   const masters = await slaveGateway.scanForMasters(helpers.generateRandomNumberInRange(600, 5000));
+
+  console.log(masters);
 
   let serverConnectionParams = {
     type: 'server',
@@ -51,7 +53,7 @@ const start = async () => {
 
   } else {
     const masterToConnect = selectBestMaster(masters);
-    logger.info(`Selected master ${masterToConnect.id} with ${masterToConnect.connections} connections`);
+    logger.info(`Selected master ${masterToConnect.id} with ${masterToConnect.rating} rating`);
     const { address, port } = await slaveGateway.acknowledgeMaster(masterToConnect);
 
     serverConnectionParams = { address, port, type: 'master' };
@@ -74,6 +76,7 @@ messageBroker.subscribe('RESTART', async () => {
   await start();
 });
 
+// start();
 
 module.exports = {
   start,

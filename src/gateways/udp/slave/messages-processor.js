@@ -23,6 +23,7 @@ class MessagesProcessor {
   _processConnectRequestResponse(server, sender, payload) {
     const response = {
       masterId: payload.masterId,
+      rating: payload.rating,
       address: sender.address,
       port: sender.port,
     };

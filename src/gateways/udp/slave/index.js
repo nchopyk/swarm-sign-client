@@ -82,14 +82,16 @@ class SlaveUDPGateway {
 
     const masters = {};
 
+    ipcMain.sendCommand(IPC_COMMANDS.UPDATE_AVAILABLE_MASTERS, masters);
+
     const responseHandler = (payload) => {
-      const { masterId, address, port } = payload;
+      const { masterId, address, port, rating } = payload;
 
       masters[masterId] = {
         id: masterId,
         address,
         port,
-        connections: Math.floor(Math.random() * 100),
+        rating,
       };
 
       ipcMain.sendCommand(IPC_COMMANDS.UPDATE_AVAILABLE_MASTERS, masters);

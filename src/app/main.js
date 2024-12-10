@@ -14,8 +14,6 @@ const deviceRatingInterval = setInterval(async () => {
 
     state.ratingData = ratingData;
 
-    console.log(topology);
-
     ipcMain.sendCommand(IPC_COMMANDS.UPDATE_MASTER_RATING, ratingData);
     ipcMain.sendCommand(IPC_COMMANDS.UPDATE_MASTER_TOPOLOGY, topology);
   } catch (error) {
