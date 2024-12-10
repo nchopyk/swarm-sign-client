@@ -19,6 +19,11 @@ function selectBestMaster(masters) {
 
 const start = async () => {
   logger.info(`Starting application${process.env.INSTANCE_ID ? ` instance #${process.env.INSTANCE_ID}` : ''}`);
+
+  if (process.env.INSTANCE_ID) {
+    ipcMain.sendCommand(IPC_COMMANDS.SET_INSTANCE_ID, process.env.INSTANCE_ID);
+  }
+
   await localStorage.init();
 
   ipcMain.sendCommand(IPC_COMMANDS.INIT_SERVER_SEARCH);

@@ -14,6 +14,7 @@ const IPC_COMMANDS = {
   UPDATE_MASTER_TOPOLOGY: 'update-master-topology',
   UPDATE_MASTER_RATING: 'update-master-rating',
   INIT_SERVER_SEARCH: 'init-server-search',
+  SET_INSTANCE_ID: 'set-instance-id',
 };
 
 const ERROR_TYPES = {
