@@ -61,7 +61,7 @@ class WatchdogService {
       log: (...args) => this.log(style(`[${tag}]`), ...args.map((arg) => style(arg))),
       info: (...args) => this.info(style(`[${tag}]`), ...args.map((arg) => style(arg))),
       warn: (...args) => this.warn(style(`[${tag}]`), ...args.map((arg) => style(arg))),
-      error: (...args) => this.error(errorStyle(`[${tag}]`), ...args.map((arg) => errorStyle(arg))),
+      error: (...args) => this.error(errorStyle(`[${tag}]`), ...args.map((arg) => errorStyle(arg)), errorStyle('STACK TRACE:'), errorStyle(new Error().stack)),
       debug: (...args) => this.debug(style(`[${tag}]`), ...args.map((arg) => style(arg))),
     };
   }
