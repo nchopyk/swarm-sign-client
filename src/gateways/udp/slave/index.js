@@ -121,10 +121,20 @@ class SlaveUDPGateway {
 
     ipcMain.sendCommand(IPC_COMMANDS.UPDATE_SELECTED_MASTER, masterServer);
 
-    return new Promise((resolve) => {
-      const responseHandler = (payload) => resolve({ address: masterServer.address, port: payload.websocketPort });
+    return new Promise((resolve, reject) => {
+      let timeout;
+
+      const responseHandler = (payload) => {
+        clearTimeout(timeout);
+        resolve({ address: masterServer.address, port: payload.websocketPort });
+      };
 
       responsesBroker.subscribeOnce(MESSAGES_TYPES.ACKNOWLEDGE_CONNECT_REQUEST_RESPONSE, responseHandler);
+
+      timeout = setTimeout(() => {
+        responsesBroker.unsubscribe(MESSAGES_TYPES.ACKNOWLEDGE_CONNECT_REQUEST_RESPONSE, responseHandler);
+        reject(new Error('Master did not respond'));
+      }, 5000);
 
       this.sendUnicastMessage(message, masterServer);
     });
