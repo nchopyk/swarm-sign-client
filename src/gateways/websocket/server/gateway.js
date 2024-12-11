@@ -210,7 +210,7 @@ class WebsocketGateway {
       return null;
     }
 
-    const { address, port } = this.server.address();
+    const { address, port } = this.server ? this.server.address() : { address: config.LOCAL_ADDRESS, port: null };
 
     return { address, port };
   }
