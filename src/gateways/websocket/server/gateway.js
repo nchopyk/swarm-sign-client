@@ -91,8 +91,8 @@ class WebsocketGateway {
               connectionsManager.removeConnection(connection.clientId);
 
               ipcMain.sendCommand(IPC_COMMANDS.UPDATE_MASTER_WEB_SOCKET, {
-                address: this.server.address().address,
-                port: this.server.address().port,
+                address: null,
+                port: null,
                 connections: connectionsManager.getConnectionsCount(),
               });
 
