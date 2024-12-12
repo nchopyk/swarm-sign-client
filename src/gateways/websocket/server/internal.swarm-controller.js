@@ -19,8 +19,6 @@ class SwarmController {
   async control() {
     const topology = topologyBuilder.getCurrentTopology();
 
-    console.dir(topology, { depth: null });
-
     if (!topology) {
       logger.info('Current node is not ready to control swarm');
       return;
@@ -45,15 +43,37 @@ class SwarmController {
       const isMasterExistsBetweenClients = topology.connectedClients.some((client) => client.port);
 
       if (!isMasterExistsBetweenClients && this.currentDepth < config.MASTER_MAX_NESTEDNESS) {
-        this.runNewMaster(topology);
+        this.runNewMasterBetweenClients(topology);
       }
     } else if (topology.connectedClients.length < config.MASTER_MAX_CONNECTIONS && !config.MASTER_PORT) {
       logger.info('Starting udp master server');
       await masterGateway.start();
     }
+
+    const { maxDepth, clientsAtMaxDepth } = this.findClientsAtMaxOpenPortDepth(topology);
+
+    if (
+      state.websocketConnectionType === 'server' &&
+      maxDepth === config.MASTER_MAX_NESTEDNESS &&
+      clientsAtMaxDepth.some(({ connectedClients }) => connectedClients.length === config.MASTER_MAX_CONNECTIONS)
+    ) {
+      const connectedSlaves = topology.connectedClients.filter((client) => client.port === null);
+
+      console.log(connectedSlaves);
+
+      if (connectedSlaves.length) {
+        const master = connectedSlaves.sort((a, b) => a.rating - b.rating)[0];
+
+        logger.info(`Selected master ${master.ip} with ${master.rating} rating`);
+        const connection = connectionsManager.getConnection(master.clientId);
+
+        sendMessage({ connection, clientId: config.CLIENT_ID, event: SLAVE_CLIENT_EVENTS.START_MASTER_UDP, data: null });
+        sendMessage({ connection, clientId: config.CLIENT_ID, event: SLAVE_CLIENT_EVENTS.START_MASTER_WS, data: null });
+      }
+    }
   }
 
-  runNewMaster(topology) {
+  runNewMasterBetweenClients(topology) {
     const isMasterExistsBetweenClients = topology.connectedClients.some((client) => client.port);
 
     if (isMasterExistsBetweenClients) {
@@ -90,6 +110,28 @@ class SwarmController {
     }
 
     return -1;
+  }
+
+  findClientsAtMaxOpenPortDepth(client, currentDepth = 0) {
+    const result = {
+      maxDepth: client.port !== null ? currentDepth : -1,
+      clientsAtMaxDepth: client.port !== null ? [client] : []
+    };
+
+    if (Array.isArray(client.connectedClients)) {
+      for (const connectedClient of client.connectedClients) {
+        const childResult = this.findClientsAtMaxOpenPortDepth(connectedClient, currentDepth + 1);
+
+        if (childResult.maxDepth > result.maxDepth) {
+          result.maxDepth = childResult.maxDepth;
+          result.clientsAtMaxDepth = childResult.clientsAtMaxDepth;
+        } else if (childResult.maxDepth === result.maxDepth && childResult.maxDepth !== -1) {
+          result.clientsAtMaxDepth = result.clientsAtMaxDepth.concat(childResult.clientsAtMaxDepth);
+        }
+      }
+    }
+
+    return result;
   }
 
   setDepth(depth) {
