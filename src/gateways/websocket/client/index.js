@@ -150,7 +150,7 @@ class Client {
       this.start({ address: this.address, port: this.port, type: this.type }).catch((error) => {
         logger.warn(`failed to reconnect: ${error.message}`);
       });
-    }, 1000);
+    }, 500 * this.retryAttempts);
   }
 }
 

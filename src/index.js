@@ -9,6 +9,7 @@ const { IPC_COMMANDS } = require('./app/constants');
 const ipcMain = require('./app/ipc-main');
 const Logger = require('./modules/Logger');
 const messageBroker = require('./modules/message-broker');
+const swarmController = require('./gateways/websocket/server/internal.swarm-controller');
 
 const logger = new Logger().tag('INDEX', 'blue');
 
@@ -36,7 +37,10 @@ const start = async () => {
     logger.info('Scanning for masters');
     await slaveGateway.start();
 
-    const masters = await slaveGateway.scanForMasters(helpers.generateRandomNumberInRange(2000, 6000));
+    const timeout = (swarmController.currentDepth === -1) ?
+      helpers.generateRandomNumberInRange(4000, 6000) :
+      helpers.generateRandomNumberInRange(1000, 2000) + (swarmController.currentDepth * 1000);
+    const masters = await slaveGateway.scanForMasters(timeout);
 
     console.log('MASTERS', masters);
 
