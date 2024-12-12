@@ -8,7 +8,7 @@ const config = {
   MASTER_PORT: null,
 
   MASTER_MAX_CONNECTIONS: 2,
-  MASTER_MAX_NESTEDNESS: 3,
+  MASTER_MAX_NESTEDNESS: 1,
 
   CLIENT_ID: crypto.randomUUID(),
 

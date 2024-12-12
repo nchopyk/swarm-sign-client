@@ -19,6 +19,8 @@ class SwarmController {
   async control() {
     const topology = topologyBuilder.getCurrentTopology();
 
+    console.dir(topology, { depth: null });
+
     if (!topology) {
       logger.info('Current node is not ready to control swarm');
       return;
@@ -42,7 +44,7 @@ class SwarmController {
 
       const isMasterExistsBetweenClients = topology.connectedClients.some((client) => client.port);
 
-      if (!isMasterExistsBetweenClients) {
+      if (!isMasterExistsBetweenClients && this.currentDepth < config.MASTER_MAX_NESTEDNESS) {
         this.runNewMaster(topology);
       }
     } else if (topology.connectedClients.length < config.MASTER_MAX_CONNECTIONS && !config.MASTER_PORT) {
