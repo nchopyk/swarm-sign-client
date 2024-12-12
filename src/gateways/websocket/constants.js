@@ -25,6 +25,8 @@ const SLAVE_CLIENT_EVENTS = {
 
   START_MASTER_WS: 'start_master_ws',
   STOP_MASTER_WS: 'stop_master_ws',
+
+  GLOBAL_MASTER_TOPOLOGY: 'global_master_topology',
 };
 
 module.exports = {

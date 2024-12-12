@@ -5,9 +5,10 @@ const ipcMain = require('../../../app/ipc-main');
 const connectionsManager = require('./internal.connections-manager');
 const internalHandlers = require('./internal.handlers');
 const swarmController = require('./internal.swarm-controller');
+const state = require('../../../state');
 const { heartbeat, initHealthCheckInterval, sendError, validate } = require('./internal.utils');
 const { WebSocketServer } = require('ws');
-const { BROKER_MESSAGES_TYPES, ERROR_TYPES, MASTER_SERVER_EVENTS } = require('../constants');
+const { BROKER_MESSAGES_TYPES, ERROR_TYPES, MASTER_SERVER_EVENTS, SLAVE_CLIENT_EVENTS } = require('../constants');
 const { IPC_COMMANDS } = require('../../../app/constants');
 const Logger = require('../../../modules/Logger');
 const { generateRandomNumberInRange } = require('../../../modules/helpers');
@@ -24,7 +25,9 @@ class WebsocketGateway {
     this.incommingHandlers = {};
     this.outgoungHandlers = {};
     this.server = null;
+
     this.healthcheckInterval = null;
+    this.globalTopologySyncInterval = null;
 
     // Retry logic configuration
     this.maxRetries = 5; // maximum number of retries
@@ -49,6 +52,8 @@ class WebsocketGateway {
           config.WS_PORT = this.server.address().port;
 
           this.healthcheckInterval = initHealthCheckInterval(this.server);
+          this.globalTopologySyncInterval = this.initGlobalTopologyInterval();
+
           processMessageBroker.subscribe(BROKER_MESSAGES_TYPES.PROXY_SERVER_EVENT, (payload) => this._proxyEventToClient(payload));
 
           ipcMain.sendCommand(IPC_COMMANDS.UPDATE_MASTER_TOPOLOGY, topologyBuilder.getCurrentTopology());
@@ -203,6 +208,24 @@ class WebsocketGateway {
     } catch (error) {
       logger.error(error);
     }
+  }
+
+  async initGlobalTopologyInterval() {
+    if (this.globalTopologySyncInterval) {
+      clearInterval(this.globalTopologySyncInterval);
+    }
+
+    return setInterval(() => {
+      if (!state.websocketConnectionType || state.websocketConnectionType !== 'server') {
+        return;
+      }
+
+      connectionsManager.broadcastMessageBetweenMasters(JSON.stringify({
+        event: SLAVE_CLIENT_EVENTS.GLOBAL_MASTER_TOPOLOGY,
+        clientId: config.CLIENT_ID,
+        data: topologyBuilder.getCurrentTopology(),
+      }));
+    }, 1000);
   }
 
   getServerAddress() {

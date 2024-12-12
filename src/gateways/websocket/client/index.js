@@ -28,6 +28,7 @@ class Client {
       [SLAVE_CLIENT_EVENTS.STOP_MASTER_UDP]: internalHandlers.onStopMasterUPD,
       [SLAVE_CLIENT_EVENTS.START_MASTER_WS]: internalHandlers.onStartMasterWS,
       [SLAVE_CLIENT_EVENTS.STOP_MASTER_WS]: internalHandlers.onStopMasterWS,
+      [SLAVE_CLIENT_EVENTS.GLOBAL_MASTER_TOPOLOGY]: internalHandlers.onGlobalMasterTopology,
     };
   }
 
@@ -35,6 +36,8 @@ class Client {
     this.address = address;
     this.port = port;
     this.type = type;
+
+    state.websocketConnectionType = type;
 
     return new Promise((resolve, reject) => {
       this.ws = new WebSocket(`ws://${address}:${port}`);
@@ -119,7 +122,7 @@ class Client {
       }
     });
 
-    this.slaveInfoTimeout = setTimeout(() => this.initDeviceInfoInterval(), 5000);
+    this.slaveInfoTimeout = setTimeout(() => this.initDeviceInfoInterval(), 3000);
   }
 
   async stop() {

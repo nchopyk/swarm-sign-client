@@ -24,8 +24,8 @@ const deviceRatingInterval = setInterval(async () => {
 
 function createWindow() {
   const mainWindow = new BrowserWindow({
-    width: 1800,
-    height: 1200,
+    width: 700,
+    height: 750,
     webPreferences: {
       nodeIntegration: true,
       preload: path.join(__dirname, 'preload.js')

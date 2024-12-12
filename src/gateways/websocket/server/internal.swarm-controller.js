@@ -2,6 +2,7 @@ const connectionsManager = require('./internal.connections-manager');
 const config = require('../../../config');
 const topologyBuilder = require('../../../modules/topology-builder');
 const masterGateway = require('../../udp/master');
+const state = require('../../../state');
 const { sendMessage } = require('../client/internal.utils');
 const { SLAVE_CLIENT_EVENTS } = require('../constants');
 const Logger = require('../../../modules/Logger');
@@ -12,6 +13,7 @@ const logger = new Logger().tag('WEBSOCKET | MASTER | SWARM CONTROLLER', 'magent
 
 class SwarmController {
   constructor() {
+    this.currentDepth = -1;
   }
 
   async control() {
@@ -25,7 +27,12 @@ class SwarmController {
     const allDevicesReady = topology.connectedClients.every((client) => client.rating);
 
     if (!allDevicesReady) {
-      logger.info('Not all devices are ready to control swarm');
+      logger.info('Not all devices are ready to control swarm, waiting for all devices to be ready');
+      return;
+    }
+
+    if (state.websocketConnectionType !== 'server' && this.currentDepth === -1) {
+      logger.info('No depth, swarm control is not possible');
       return;
     }
 
@@ -64,6 +71,28 @@ class SwarmController {
     sendMessage({ connection, clientId: config.CLIENT_ID, event: SLAVE_CLIENT_EVENTS.START_MASTER_WS, data: null });
   }
 
+  findCurrentNodeDepth(topology, targetClientId, currentDepth = 0) {
+    if (topology.clientId === targetClientId) {
+      return currentDepth;
+    }
+
+    if (!topology.connectedClients || topology.connectedClients.length === 0) {
+      return -1;
+    }
+
+    for (const connectedClient of topology.connectedClients) {
+      const depth = this.findCurrentNodeDepth(connectedClient, targetClientId, currentDepth + 1);
+      if (depth !== -1) {
+        return depth;
+      }
+    }
+
+    return -1;
+  }
+
+  setDepth(depth) {
+    this.currentDepth = depth;
+  }
 }
 
 
