@@ -7,12 +7,17 @@ const internalHandlers = require('./internal.handlers');
 const swarmController = require('./internal.swarm-controller');
 const state = require('../../../state');
 const { heartbeat, initHealthCheckInterval, sendError, validate } = require('./internal.utils');
-const { WebSocketServer } = require('ws');
+const WebSocket = require('ws');
+const http = require('http');
+const express = require('express');
 const { BROKER_MESSAGES_TYPES, ERROR_TYPES, MASTER_SERVER_EVENTS, SLAVE_CLIENT_EVENTS } = require('../constants');
-const { IPC_COMMANDS } = require('../../../app/constants');
+const { IPC_COMMANDS, SERVER_EVENTS } = require('../../../app/constants');
 const Logger = require('../../../modules/Logger');
 const { generateRandomNumberInRange } = require('../../../modules/helpers');
+const { onScheduleEventInterceptor } = require('./internal.interceptors');
 const topologyBuilder = require('../../../modules/topology-builder');
+const path = require('path');
+
 
 const logger = new Logger().tag('WEBSOCKET | MASTER', 'magenta');
 
@@ -23,8 +28,12 @@ class WebsocketGateway {
       [MASTER_SERVER_EVENTS.SLAVE_INFO]: internalHandlers.onSlaveInfo
     };
     this.incommingHandlers = {};
-    this.outgoungHandlers = {};
+    this.inteceptors = {
+      [SERVER_EVENTS.SCHEDULE]: onScheduleEventInterceptor,
+    };
+
     this.server = null;
+    this.httpServer = null;
 
     this.healthcheckInterval = null;
     this.globalTopologySyncInterval = null;
@@ -38,7 +47,16 @@ class WebsocketGateway {
   async start() {
     return new Promise((resolve, reject) => {
       const attemptBind = (port) => {
-        this.server = new WebSocketServer({ port, host: config.LOCAL_ADDRESS });
+        const app = express();
+
+        // Serve static files from the 'storage' folder
+        app.use('/storage', express.static(path.resolve(__dirname, '..', '..', '..', '..', 'storage')));
+
+        // Create the HTTP server
+        this.httpServer = http.createServer(app);
+
+        // Attach WebSocket server to the HTTP server
+        this.server = new WebSocket.Server({ server: this.httpServer });
 
         this.server.on('listening', () => {
           logger.info(`server is listening on port ${port}`);
@@ -71,10 +89,7 @@ class WebsocketGateway {
             logger.warn(`Port ${port} is in use, retrying with port ${this.currentPort} (attempt ${this.attempt}/${this.maxRetries})`);
 
             // Close current server before retrying
-            this.server.close(() => {
-              // remove all event listeners before retrying
-              this.server.removeAllListeners();
-
+            this.httpServer.close(() => {
               attemptBind(this.currentPort);
             });
           } else {
@@ -108,7 +123,11 @@ class WebsocketGateway {
           });
         });
 
-        this.server.on('close', () => {
+        this.httpServer.listen(port, config.LOCAL_ADDRESS, () => {
+          logger.info(`HTTP server is running on http://${config.LOCAL_ADDRESS}:${port}`);
+        });
+
+        this.httpServer.on('close', () => {
           clearInterval(this.healthcheckInterval);
           this.healthcheckInterval = null;
           config.WS_PORT = null;
@@ -124,6 +143,10 @@ class WebsocketGateway {
 
   async stop() {
     connectionsManager.closeAllConnections();
+
+    if (this.httpServer) {
+      this.httpServer.close();
+    }
 
     if (!this.server) {
       return;
@@ -202,6 +225,12 @@ class WebsocketGateway {
         logger.error(`no connection found for clientId: ${outgoingPayload.clientId}, sending between all masters`);
         connectionsManager.broadcastMessageBetweenMasters(JSON.stringify(outgoingPayload));
         return;
+      }
+
+      const interceptor = this.inteceptors[outgoingPayload.event];
+
+      if (interceptor) {
+        outgoingPayload = await interceptor(outgoingPayload);
       }
 
       connection.send(JSON.stringify(outgoingPayload));

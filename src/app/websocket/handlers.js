@@ -83,6 +83,7 @@ const onLoginFailure = async (connection, data) => {
 
 const onSchedule = (connection, data) => {
   logger.info('received schedule');
+  console.dir(data, { depth: null });
   ipcMain.sendCommand(IPC_COMMANDS.START_PLAYER, data);
 };
 
