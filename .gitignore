@@ -135,4 +135,4 @@ dist
 # Local storage file
 local-storage*
 
-./storage/
+storage/
