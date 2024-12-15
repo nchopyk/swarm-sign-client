@@ -27,6 +27,12 @@ class MasterUDPGateway {
             const sender = { address: rinfo.address, port: rinfo.port };
 
             logger.info(`incoming message from ${sender.address}:${sender.port}: ${data.toString()}`);
+
+            if (!this.server) {
+              logger.warn('server is not running');
+              return;
+            }
+
             await messagesProcessor.process(this.server, sender, message);
           } catch (error) {
             logger.error(error);
