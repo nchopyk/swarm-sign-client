@@ -42,7 +42,7 @@ const start = async () => {
       helpers.generateRandomNumberInRange(1000, 2000) + (swarmController.currentDepth * 1000);
     const masters = await slaveGateway.scanForMasters(timeout);
 
-    console.log('MASTERS', masters);
+    // console.log('MASTERS', masters);
 
     let serverConnectionParams = {
       type: 'server',
