@@ -28,7 +28,15 @@ const onScheduleEventInterceptor = async (outgoingPayload) => {
     return outgoingPayload;
   }
 
-  const existingFilesInStorage = await fs.promises.readdir(path.resolve(__dirname, '..', '..', '..', '..', 'storage'));
+  const STORAGE_DIR = path.resolve(__dirname, '..', '..', '..', '..', `storage${process.env.INSTANCE_ID ? `-${process.env.INSTANCE_ID}` : ''}`);
+
+  const isStorageDirExists = await fs.promises.access(STORAGE_DIR, fs.constants.F_OK).then(() => true).catch(() => false);
+
+  if (!isStorageDirExists) {
+    await fs.promises.mkdir(STORAGE_DIR, { recursive: true });
+  }
+
+  const existingFilesInStorage = await fs.promises.readdir(STORAGE_DIR);
 
   const contentFileNames = contentLinks.map((link) => {
     const urlParts = link.split('/');
@@ -44,7 +52,7 @@ const onScheduleEventInterceptor = async (outgoingPayload) => {
       if (fileUrl) {
         const downloader = new Downloader({
           url: fileUrl,
-          directory: path.resolve(__dirname, '..', '..', '..', '..', 'storage'),
+          directory: STORAGE_DIR,
           fileName: missingFile,
           cloneFiles: false,
         });
@@ -61,7 +69,7 @@ const onScheduleEventInterceptor = async (outgoingPayload) => {
 
   if (config.WS_PORT) {
     // replace the content links with the local file paths
-    const baseServerUrl = `http://localhost:${config.WS_PORT}/storage`;
+    const baseServerUrl = `http://localhost:${config.WS_PORT}/storage${process.env.INSTANCE_ID ? `-${process.env.INSTANCE_ID}` : ''}`;
 
     outgoingPayload.data.schedule.medias.data.forEach((item) => {
       if (item.media && item.media.content) {

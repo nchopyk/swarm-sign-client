@@ -10,6 +10,7 @@ const { heartbeat, initHealthCheckInterval, sendError, validate } = require('./i
 const WebSocket = require('ws');
 const http = require('http');
 const express = require('express');
+const cors = require('cors');
 const { BROKER_MESSAGES_TYPES, ERROR_TYPES, MASTER_SERVER_EVENTS, SLAVE_CLIENT_EVENTS } = require('../constants');
 const { IPC_COMMANDS, SERVER_EVENTS } = require('../../../app/constants');
 const Logger = require('../../../modules/Logger');
@@ -48,10 +49,11 @@ class WebsocketGateway {
     return new Promise((resolve, reject) => {
       const attemptBind = (port) => {
         const app = express();
+        app.use(cors());
+
 
         // Serve static files from the 'storage' folder
-        app.use('/storage', express.static(path.resolve(__dirname, '..', '..', '..', '..', 'storage')));
-
+        app.use('/storage', express.static(path.resolve(__dirname, '..', '..', '..', '..', `storage${process.env.INSTANCE_ID ? `-${process.env.INSTANCE_ID}` : ''}`)));
         // Create the HTTP server
         this.httpServer = http.createServer(app);
 
