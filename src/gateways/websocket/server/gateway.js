@@ -53,7 +53,7 @@ class WebsocketGateway {
 
 
         // Serve static files from the 'storage' folder
-        app.use('/storage', express.static(path.resolve(__dirname, '..', '..', '..', '..', `storage${process.env.INSTANCE_ID ? `-${process.env.INSTANCE_ID}` : ''}`)));
+        app.use(`/storage${process.env.INSTANCE_ID ? `-${process.env.INSTANCE_ID}` : ''}`, express.static(path.resolve(__dirname, '..', '..', '..', '..', `storage${process.env.INSTANCE_ID ? `-${process.env.INSTANCE_ID}` : ''}`)));
         // Create the HTTP server
         this.httpServer = http.createServer(app);
 
@@ -119,6 +119,12 @@ class WebsocketGateway {
               });
 
               ipcMain.sendCommand(IPC_COMMANDS.UPDATE_MASTER_TOPOLOGY, topologyBuilder.getCurrentTopology());
+
+              processMessageBroker.publish(BROKER_MESSAGES_TYPES.PROXY_CLIENT_EVENT, {
+                clientId: connection.clientId,
+                event: SERVER_EVENTS.LOGOUT,
+                data: null,
+              });
 
               await swarmController.control();
             }
